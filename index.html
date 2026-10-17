@@ -547,11 +547,16 @@
         recorder: false, mobile: false, name: "", location: "", notes: ""
       });
       questionHistory = [];
-      currentQuestionRenderer = startChat;
+      currentQuestionRenderer = null;
       skipHistoryPush = false;
       step = 1;
       generatedClientCode = "";
       addBubble("¡Hola! Bienvenido a Enmx Security Cam. Te ayudaré a preparar una cotización estimada. CCTV son cámaras de seguridad que normalmente se conectan por cable. El DVR es el grabador que recibe las cámaras y guarda las imágenes para verlas después. Si no sabes cuál necesitas, elige “Necesito orientación”. ¿Qué tipo de sistema buscas?");
+      askCameraType();
+    }
+
+    function askCameraType() {
+      beginQuestion(askCameraType);
       addOptions([
         { label: "CCTV / DVR", value: "cctv" },
         { label: "Wi-Fi", value: "wifi" },

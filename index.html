@@ -400,6 +400,39 @@
     const summary = document.getElementById("summary");
     let step = 0;
     let generatedClientCode = "";
+    let questionHistory = [];
+    let currentQuestionRenderer = null;
+    let skipHistoryPush = false;
+
+    function beginQuestion(renderer) {
+      if (!skipHistoryPush && currentQuestionRenderer && currentQuestionRenderer !== renderer) {
+        questionHistory.push(currentQuestionRenderer);
+      }
+      currentQuestionRenderer = renderer;
+      skipHistoryPush = false;
+    }
+
+    function goBackOneQuestion() {
+      const previous = questionHistory.pop();
+      if (!previous) return;
+      chat.innerHTML = "";
+      summary.classList.add("hidden");
+      summary.innerHTML = "";
+      currentQuestionRenderer = previous;
+      skipHistoryPush = true;
+      previous();
+    }
+
+    function addBackButton(container) {
+      if (!questionHistory.length) return;
+      const back = document.createElement("button");
+      back.type = "button";
+      back.className = "btn secondary";
+      back.textContent = "← Volver y cambiar una respuesta";
+      back.style.marginTop = "10px";
+      back.addEventListener("click", goBackOneQuestion);
+      container.appendChild(back);
+    }
 
     function generateClientCode() {
       const bytes = new Uint8Array(5);
@@ -451,6 +484,7 @@
       });
 
       bubble.appendChild(wrapper);
+      addBackButton(bubble);
       chat.appendChild(bubble);
       chat.scrollTop = chat.scrollHeight;
     }
@@ -497,6 +531,7 @@
       });
 
       bubble.appendChild(form);
+      addBackButton(bubble);
       chat.appendChild(bubble);
       chat.scrollTop = chat.scrollHeight;
       input.focus();
@@ -511,6 +546,9 @@
         equipmentStatus: "", equipmentCostPerCameraDOP: 0, materialsCostDOP: 0,
         recorder: false, mobile: false, name: "", location: "", notes: ""
       });
+      questionHistory = [];
+      currentQuestionRenderer = startChat;
+      skipHistoryPush = false;
       step = 1;
       generatedClientCode = "";
       addBubble("¡Hola! Bienvenido a Enmx Security Cam. Te ayudaré a preparar una cotización estimada. CCTV son cámaras de seguridad que normalmente se conectan por cable. El DVR es el grabador que recibe las cámaras y guarda las imágenes para verlas después. Si no sabes cuál necesitas, elige “Necesito orientación”. ¿Qué tipo de sistema buscas?");
@@ -535,6 +573,7 @@
     }
 
     function askQuantity() {
+      beginQuestion(askQuantity);
       step = 2;
       addBubble("¿Cuántas cámaras quieres instalar?");
       addInput("Cantidad de cámaras", "Ej. 4", value => {
@@ -544,6 +583,7 @@
     }
 
     function askProperty() {
+      beginQuestion(askProperty);
       step = 3;
       addBubble("¿Dónde se realizará la instalación?");
       addOptions([
@@ -558,6 +598,7 @@
     }
 
     function askQuoteType() {
+      beginQuestion(askQuoteType);
       step = 4;
       addBubble("¿Qué tipo de cotización necesitas?");
       addOptions([
@@ -570,6 +611,7 @@
     }
 
     function askEquipment() {
+      beginQuestion(askEquipment);
       step = 6;
       addBubble("¿Ya tienes los equipos?");
       addOptions([
@@ -587,6 +629,7 @@
     }
 
     function askEquipmentCosts() {
+      beginQuestion(askEquipmentCosts);
       addBubble("Para incluir equipos y materiales sin inventar precios, introduce el costo estimado total de cámaras/equipos por cámara en RD$. Si aún no tienes precio, escribe 0 y la cotización mostrará que ese costo está pendiente.");
       addInput("Costo de equipos por cámara (RD$)", "Ej. 2500 o 0", value => {
         state.equipmentCostPerCameraDOP = value;
@@ -595,6 +638,7 @@
     }
 
     function askMaterialsCost() {
+      beginQuestion(askMaterialsCost);
       addBubble("Ahora introduce el costo total estimado de materiales adicionales para todo el trabajo en RD$. Si no lo sabes, escribe 0.");
       addInput("Costo total de materiales (RD$)", "Ej. 1800 o 0", value => {
         state.materialsCostDOP = value;
@@ -603,6 +647,7 @@
     }
 
     function askMobile() {
+      beginQuestion(askMobile);
       addBubble("¿Quieres poder ver las imágenes de tus cámaras en vivo desde tu teléfono, incluso cuando estés fuera de casa? Si respondes que sí, incluiremos la configuración para que puedas verlas desde el móvil.");
       addOptions([
         { label: "Sí", value: true },
@@ -652,6 +697,7 @@
     }
 
     function showSummary() {
+      beginQuestion(showSummary);
       step = 12;
       const costs = calculate();
       const usdReady = !CONFIG.requireVerifiedExchangeRate &&
@@ -697,6 +743,7 @@
 
       summary.innerHTML = `
         <h3>Resumen de tu solicitud</h3>
+        <button type="button" class="btn secondary" id="editQuoteAnswers" style="margin-bottom:14px;">← Volver y cambiar una respuesta</button>
         <div class="summary-grid">
           <div class="summary-item"><small>Cliente</small><strong>Se completa en el formulario final</strong></div>
           <div class="summary-item"><small>Ubicación</small><strong>Se completa en el formulario final</strong></div>
@@ -736,6 +783,7 @@
       summary.classList.remove("hidden");
       chat.appendChild(summary);
       chat.scrollTop = chat.scrollHeight;
+      document.getElementById("editQuoteAnswers").addEventListener("click", goBackOneQuestion);
 
       document.getElementById("copyQuote").addEventListener("click", async () => {
         try {

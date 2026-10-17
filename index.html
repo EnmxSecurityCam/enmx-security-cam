@@ -359,17 +359,18 @@
     const CONFIG = {
       // Mano de obra estimada por cámara en RD$.
       laborPerCameraDOP: {
-        cctv: 700,
-        wifi: 500,
-        ip: 900
+        cctv: 1200,
+        wifi: 900,
+        ip: 1500
       },
 
-      // Recargo estimado por cámara cuando el cableado es difícil.
-      difficultWiringExtraPerCameraDOP: 350,
+      // Recargo por cámara para estimar cableado de dificultad media.
+      // Se confirma el precio final después de revisar el lugar.
+      difficultWiringExtraPerCameraDOP: 450,
 
       // Configuración de DVR/NVR y visualización desde el móvil.
-      recorderSetupDOP: 1500,
-      mobileSetupDOP: 500,
+      recorderSetupDOP: 1800,
+      mobileSetupDOP: 600,
 
       // Cambia esta tasa por la que decidas utilizar.
       // Es solo un valor inicial de ejemplo, NO una tasa verificada.
@@ -666,8 +667,8 @@
 
     function calculate() {
       const base = CONFIG.laborPerCameraDOP[state.type] * state.quantity;
-      // Tarifa estándar de instalación: no se pregunta por la facilidad del cableado.
-      const wiringExtra = 0;
+      // Se estima cableado de dificultad media para dejar margen de tiempo y trabajo.
+      const wiringExtra = CONFIG.difficultWiringExtraPerCameraDOP * state.quantity;
       // La configuración del grabador es obligatoria y siempre se cobra.
       const recorder = CONFIG.recorderSetupDOP;
       const mobile = state.mobile ? CONFIG.mobileSetupDOP : 0;
@@ -711,6 +712,7 @@
         state.equipmentCostPerCameraDOP === 0;
       const totalLines = [
         ["Mano de obra por cámaras", formatDOP(costs.base)],
+        ["Cableado de dificultad media (estimado)", formatDOP(costs.wiringExtra)],
         ["Configuración obligatoria del grabador DVR/NVR", formatDOP(costs.recorder)],
         ["Configuración en móvil", formatDOP(costs.mobile)]
       ];
@@ -734,7 +736,7 @@
         "Cantidad: " + state.quantity,
         "Lugar: " + propertyNames[state.property],
         "Tipo de cotización: " + (state.quoteType === "labor" ? "Solo mano de obra" : "Equipos + materiales + instalación"),
-        "Instalación: tarifa estándar; condiciones especiales se confirman al revisar el lugar",
+        "Instalación: estimado con cableado de dificultad media; condiciones especiales se confirman al revisar el lugar",
         "Estado de equipos: " + ({have:"Tiene equipos", some:"Tiene algunos equipos", none:"Necesita comprar todo"}[state.equipmentStatus]),
         "Configuración DVR/NVR: Obligatoria e incluida en el cálculo",
         "Configuración móvil: " + (state.mobile ? "Sí" : "No"),

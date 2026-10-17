@@ -1,0 +1,799 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#090909">
+  <meta name="description" content="Enmx Security Cam: solicita una cotización estimada para instalación de cámaras de seguridad.">
+  <title>Enmx Security Cam | Seguridad inteligente</title>
+  <style>
+    :root {
+      --bg: #090909;
+      --panel: #131313;
+      --panel2: #1b1b1b;
+      --gold: #d7b568;
+      --gold2: #f2d99b;
+      --text: #f7f4ed;
+      --muted: #aaa69b;
+      --line: #343027;
+      --green: #8ed6a1;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: var(--gold2); }
+    .container { width: min(1100px, 92%); margin: auto; }
+    header {
+      border-bottom: 1px solid var(--line);
+      background: rgba(9,9,9,.94);
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 0;
+    }
+    .brand {
+      color: var(--gold2);
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+    }
+    .brand span { color: var(--text); }
+    .nav a {
+      font-size: .9rem;
+      text-decoration: none;
+    }
+    .hero {
+      padding: 76px 0 54px;
+      background:
+        radial-gradient(ellipse at 80% 15%, rgba(215,181,104,.13), transparent 42%),
+        linear-gradient(180deg, #0c0c0c, var(--bg));
+    }
+    .eyebrow {
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-size: .76rem;
+      font-weight: 800;
+    }
+    h1 {
+      max-width: 760px;
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      line-height: 1.04;
+      letter-spacing: -2px;
+      margin: 16px 0;
+    }
+    h1 span { color: var(--gold); }
+    .hero p {
+      color: var(--muted);
+      max-width: 610px;
+      font-size: 1.06rem;
+    }
+    .btn {
+      border: 1px solid var(--gold);
+      background: var(--gold);
+      color: #15120b;
+      font-weight: 800;
+      padding: 12px 18px;
+      border-radius: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: .2s;
+    }
+    .btn:hover { background: var(--gold2); transform: translateY(-1px); }
+    .btn.secondary {
+      background: transparent;
+      color: var(--gold2);
+    }
+    .btn.secondary:hover { background: #242016; }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      padding: 18px 0 60px;
+    }
+    .feature, .chat-panel, .info-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 15px;
+    }
+    .feature { padding: 22px; }
+    .feature .symbol { color: var(--gold); font-size: 1.5rem; }
+    .feature h3 { margin: 8px 0 5px; }
+    .feature p { color: var(--muted); font-size: .92rem; margin: 0; }
+    section { scroll-margin-top: 25px; }
+    .section-title { margin-bottom: 22px; }
+    .section-title h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 5px 0; }
+    .section-title p { color: var(--muted); margin-top: 0; }
+    .quote-section { padding: 30px 0 75px; }
+    .chat-panel { overflow: hidden; }
+    .chat-header {
+      background: #19170f;
+      border-bottom: 1px solid var(--line);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .chat-header strong { color: var(--gold2); }
+    .status { color: var(--green); font-size: .8rem; }
+    #chat {
+      padding: 20px;
+      min-height: 220px;
+      max-height: 520px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .bubble {
+      padding: 13px 15px;
+      border-radius: 13px;
+      max-width: 94%;
+      overflow-wrap: anywhere;
+    }
+    .bot {
+      background: var(--panel2);
+      border: 1px solid #302d25;
+      align-self: flex-start;
+    }
+    .user {
+      background: #3a301c;
+      border: 1px solid #62502b;
+      align-self: flex-end;
+    }
+    .bubble p { margin: 0 0 7px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 12px;
+    }
+    .option {
+      color: var(--text);
+      background: #202020;
+      border: 1px solid #494236;
+      padding: 10px 13px;
+      border-radius: 9px;
+      text-align: left;
+    }
+    .option:hover { border-color: var(--gold); background: #29251b; }
+    .field-row { display: flex; gap: 8px; margin-top: 10px; }
+    .field-row input, .field-row select {
+      min-width: 0;
+      width: 100%;
+      background: #090909;
+      color: var(--text);
+      border: 1px solid #494236;
+      border-radius: 9px;
+      padding: 11px 12px;
+    }
+    .field-row input:focus, .field-row select:focus {
+      outline: 2px solid var(--gold);
+      outline-offset: 1px;
+    }
+    .hint { color: var(--muted); font-size: .82rem; margin-top: 8px !important; }
+    .summary {
+      border-top: 1px solid var(--line);
+      padding: 20px;
+      background: #10100e;
+    }
+    .summary h3 { margin-top: 0; color: var(--gold2); }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .summary-item {
+      background: #181818;
+      border: 1px solid #302d25;
+      border-radius: 9px;
+      padding: 12px;
+    }
+    .summary-item small { display: block; color: var(--muted); }
+    .summary-item strong { overflow-wrap: anywhere; }
+    .totals { margin: 18px 0; }
+    .total-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid #302d25;
+      padding: 9px 0;
+    }
+    .total-line.final {
+      color: var(--gold2);
+      font-weight: 900;
+      font-size: 1.15rem;
+      border: 0;
+    }
+    .notice {
+      color: var(--muted);
+      font-size: .82rem;
+      background: #1a1812;
+      border-left: 3px solid var(--gold);
+      padding: 12px;
+      margin: 14px 0;
+    }
+    .hidden { display: none !important; }
+    .info-section { padding: 0 0 75px; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .info-card { padding: 22px; }
+    .info-card h3 { color: var(--gold2); margin-top: 0; }
+    .info-card p, footer p { color: var(--muted); }
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 28px 0;
+      font-size: .88rem;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 650px) {
+      .hero { padding-top: 52px; }
+      .features, .info-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .nav { align-items: flex-start; }
+      .nav a { text-align: right; }
+      #chat { padding: 13px; }
+      .bubble { max-width: 100%; }
+      .field-row { flex-direction: column; }
+      .btn { width: 100%; }
+      .chat-header { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="brand">ENMX <span>SECURITY CAM</span></div>
+      <a href="#cotizar">Solicitar cotización ↗</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="eyebrow">Protección · Tecnología · Confianza</div>
+        <h1>Tu seguridad.<br><span>Nuestra prioridad.</span></h1>
+        <p>
+          Soluciones de videovigilancia para hogares, colmados y negocios.
+          Cuéntanos lo que necesitas y prepara una cotización estimada en pocos pasos.
+        </p>
+        <a class="btn" href="#cotizar">Comenzar mi cotización <span>→</span></a>
+      </div>
+    </section>
+
+    <div class="container features">
+      <article class="feature">
+        <div class="symbol">◉</div>
+        <h3>Cámaras CCTV / DVR</h3>
+        <p>Opciones de videovigilancia cableada para diferentes espacios.</p>
+      </article>
+      <article class="feature">
+        <div class="symbol">⌁</div>
+        <h3>Cámaras Wi-Fi</h3>
+        <p>Alternativas inalámbricas para hogares y pequeños negocios.</p>
+      </article>
+      <article class="feature">
+        <div class="symbol">▣</div>
+        <h3>Cámaras IP</h3>
+        <p>Soluciones de red que se ajustan a las necesidades del proyecto.</p>
+      </article>
+    </div>
+
+    <section class="container quote-section" id="cotizar">
+      <div class="section-title">
+        <div class="eyebrow">Asistente virtual</div>
+        <h2>Construye tu cotización</h2>
+        <p>Responde las preguntas. Al final podrás revisar y copiar los detalles de tu solicitud.</p>
+      </div>
+
+      <div class="chat-panel">
+        <div class="chat-header">
+          <div>
+            <strong>ENMX ASSISTANT</strong><br>
+            <span style="color:var(--muted);font-size:.83rem">Asistente de cotizaciones</span>
+          </div>
+          <span class="status">● Disponible en esta página</span>
+        </div>
+        <div id="chat" aria-live="polite"></div>
+        <div id="summary" class="summary hidden"></div>
+      </div>
+    </section>
+
+    <section class="container info-section">
+      <div class="section-title">
+        <div class="eyebrow">Nuestro proceso</div>
+        <h2>Claro desde el principio</h2>
+      </div>
+      <div class="info-grid">
+        <article class="info-card">
+          <h3>01 · Cuéntanos tu proyecto</h3>
+          <p>Indica el tipo y la cantidad de cámaras, el lugar y las condiciones de instalación.</p>
+        </article>
+        <article class="info-card">
+          <h3>02 · Revisa el estimado</h3>
+          <p>Obtén una referencia inicial. Los trabajos complejos pueden necesitar una visita antes de confirmar el precio.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <div>
+        <div class="brand">ENMX <span>SECURITY CAM</span></div>
+        <p>Soluciones de seguridad y videovigilancia.</p>
+      </div>
+      <p>© <span id="year"></span> Enmx Security Cam.<br>Precios sujetos a confirmación.</p>
+    </div>
+  </footer>
+
+  <script>
+    /*
+      CONFIGURACIÓN DE PRECIOS
+      Modifica estos valores según tus tarifas reales.
+      Los precios de ejemplo son referencias editables, no tarifas verificadas.
+      El cliente verá un aviso de que el precio es estimado.
+    */
+    const CONFIG = {
+      // Mano de obra estimada por cámara en RD$.
+      laborPerCameraDOP: {
+        cctv: 800,
+        wifi: 600,
+        ip: 900
+      },
+
+      // Recargo estimado por cámara cuando el cableado es difícil.
+      difficultWiringExtraPerCameraDOP: 350,
+
+      // Configuración de DVR/NVR y visualización desde el móvil.
+      recorderSetupDOP: 1500,
+      mobileSetupDOP: 500,
+
+      // Cambia esta tasa por la que decidas utilizar.
+      // Es solo un valor inicial de ejemplo, NO una tasa verificada.
+      dopPerUsd: 60,
+
+      // false: permite mostrar RD$ y US$ usando la tasa anterior.
+      // true: oculta el total en dólares hasta que configures una tasa real.
+      requireVerifiedExchangeRate: false
+    };
+
+    const state = {
+      type: "",
+      quantity: 0,
+      property: "",
+      quoteType: "",
+      wiring: "",
+      equipmentStatus: "",
+      equipmentCostPerCameraDOP: 0,
+      materialsCostDOP: 0,
+      recorder: false,
+      mobile: false,
+      name: "",
+      location: "",
+      notes: ""
+    };
+
+    const chat = document.getElementById("chat");
+    const summary = document.getElementById("summary");
+    let step = 0;
+
+    const cameraNames = {
+      cctv: "CCTV / DVR",
+      wifi: "Wi-Fi",
+      ip: "IP"
+    };
+
+    const propertyNames = {
+      home: "Casa",
+      colmado: "Colmado / tienda",
+      business: "Otro negocio",
+      other: "Otro lugar"
+    };
+
+    function addBubble(text, who = "bot") {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble " + who;
+      const p = document.createElement("p");
+      p.textContent = text;
+      bubble.appendChild(p);
+      chat.appendChild(bubble);
+      chat.scrollTop = chat.scrollHeight;
+      return bubble;
+    }
+
+    function addOptions(items, callback) {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble bot";
+      const wrapper = document.createElement("div");
+      wrapper.className = "options";
+
+      items.forEach(item => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "option";
+        button.textContent = item.label;
+        button.addEventListener("click", () => {
+          wrapper.querySelectorAll("button").forEach(b => b.disabled = true);
+          addBubble(item.label, "user");
+          callback(item.value);
+        });
+        wrapper.appendChild(button);
+      });
+
+      bubble.appendChild(wrapper);
+      chat.appendChild(bubble);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function addInput(label, placeholder, onSubmit, type = "text", min = null, max = null) {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble bot";
+
+      const title = document.createElement("p");
+      title.textContent = label;
+      bubble.appendChild(title);
+
+      const form = document.createElement("form");
+      form.className = "field-row";
+
+      const input = document.createElement("input");
+      input.type = type;
+      input.placeholder = placeholder;
+      input.required = true;
+      if (min !== null) input.min = min;
+      if (max !== null) input.max = max;
+      if (type === "number") input.step = "1";
+
+      const button = document.createElement("button");
+      button.type = "submit";
+      button.className = "btn";
+      button.textContent = "Continuar";
+
+      form.append(input, button);
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        const value = type === "number" ? Number(input.value) : input.value.trim();
+        if (type === "number" && (!Number.isFinite(value) || value < Number(min) || value > Number(max))) {
+          input.reportValidity();
+          return;
+        }
+        if (typeof value === "string" && !value) {
+          input.reportValidity();
+          return;
+        }
+        form.querySelectorAll("input,button").forEach(el => el.disabled = true);
+        addBubble(type === "number" ? String(value) : value, "user");
+        onSubmit(value);
+      });
+
+      bubble.appendChild(form);
+      chat.appendChild(bubble);
+      chat.scrollTop = chat.scrollHeight;
+      input.focus();
+    }
+
+    function startChat() {
+      chat.innerHTML = "";
+      summary.classList.add("hidden");
+      summary.innerHTML = "";
+      Object.assign(state, {
+        type: "", quantity: 0, property: "", quoteType: "", wiring: "",
+        equipmentStatus: "", equipmentCostPerCameraDOP: 0, materialsCostDOP: 0,
+        recorder: false, mobile: false, name: "", location: "", notes: ""
+      });
+      step = 1;
+      addBubble("¡Hola! Bienvenido a Enmx Security Cam. Te ayudaré a preparar una cotización estimada para tu instalación. ¿Qué tipo de cámaras necesitas?");
+      addOptions([
+        { label: "CCTV / DVR", value: "cctv" },
+        { label: "Wi-Fi", value: "wifi" },
+        { label: "IP", value: "ip" },
+        { label: "Necesito orientación", value: "unknown" }
+      ], value => {
+        if (value === "unknown") {
+          addBubble("No hay problema. Para esta primera cotización, seleccionaremos un tipo de referencia. Puedes confirmar el sistema con un técnico antes de comprar equipos.");
+          addOptions([
+            { label: "CCTV / DVR", value: "cctv" },
+            { label: "Wi-Fi", value: "wifi" },
+            { label: "IP", value: "ip" }
+          ], type => { state.type = type; askQuantity(); });
+        } else {
+          state.type = value;
+          askQuantity();
+        }
+      });
+    }
+
+    function askQuantity() {
+      step = 2;
+      addBubble("¿Cuántas cámaras quieres instalar?");
+      addInput("Cantidad de cámaras", "Ej. 4", value => {
+        state.quantity = value;
+        askProperty();
+      }, "number", 1, 100);
+    }
+
+    function askProperty() {
+      step = 3;
+      addBubble("¿Dónde se realizará la instalación?");
+      addOptions([
+        { label: "Casa", value: "home" },
+        { label: "Colmado / tienda", value: "colmado" },
+        { label: "Otro negocio", value: "business" },
+        { label: "Otro lugar", value: "other" }
+      ], value => {
+        state.property = value;
+        askQuoteType();
+      });
+    }
+
+    function askQuoteType() {
+      step = 4;
+      addBubble("¿Qué tipo de cotización necesitas?");
+      addOptions([
+        { label: "Solo mano de obra", value: "labor" },
+        { label: "Equipos + materiales + instalación", value: "full" }
+      ], value => {
+        state.quoteType = value;
+        askWiring();
+      });
+    }
+
+    function askWiring() {
+      step = 5;
+      addBubble("¿Cómo está el lugar para pasar cables o montar las cámaras?");
+      addOptions([
+        { label: "Fácil / cableado listo", value: "easy" },
+        { label: "Normal", value: "normal" },
+        { label: "Difícil / mucha altura o distancia", value: "difficult" },
+        { label: "No estoy seguro", value: "unknown" }
+      ], value => {
+        state.wiring = value;
+        askEquipment();
+      });
+    }
+
+    function askEquipment() {
+      step = 6;
+      addBubble("¿Ya tienes los equipos?");
+      addOptions([
+        { label: "Sí, tengo las cámaras y el sistema", value: "have" },
+        { label: "Tengo algunos equipos", value: "some" },
+        { label: "Necesito comprar todo", value: "none" }
+      ], value => {
+        state.equipmentStatus = value;
+        if (state.quoteType === "full") {
+          askEquipmentCosts();
+        } else {
+          askRecorder();
+        }
+      });
+    }
+
+    function askEquipmentCosts() {
+      addBubble("Para incluir equipos y materiales sin inventar precios, introduce el costo estimado total de cámaras/equipos por cámara en RD$. Si aún no tienes precio, escribe 0 y la cotización mostrará que ese costo está pendiente.");
+      addInput("Costo de equipos por cámara (RD$)", "Ej. 2500 o 0", value => {
+        state.equipmentCostPerCameraDOP = value;
+        askMaterialsCost();
+      }, "number", 0, 10000000);
+    }
+
+    function askMaterialsCost() {
+      addBubble("Ahora introduce el costo total estimado de materiales adicionales para todo el trabajo en RD$. Si no lo sabes, escribe 0.");
+      addInput("Costo total de materiales (RD$)", "Ej. 1800 o 0", value => {
+        state.materialsCostDOP = value;
+        askRecorder();
+      }, "number", 0, 10000000);
+    }
+
+    function askRecorder() {
+      addBubble("¿Hay que configurar un DVR/NVR o grabador?");
+      addOptions([
+        { label: "Sí", value: true },
+        { label: "No", value: false }
+      ], value => {
+        state.recorder = value;
+        askMobile();
+      });
+    }
+
+    function askMobile() {
+      addBubble("¿Quieres configurar la visualización de las cámaras desde el móvil?");
+      addOptions([
+        { label: "Sí", value: true },
+        { label: "No", value: false }
+      ], value => {
+        state.mobile = value;
+        askLocation();
+      });
+    }
+
+    function askLocation() {
+      addBubble("¿En qué ciudad o sector se realizará el trabajo? No hace falta que compartas tu dirección exacta.");
+      addInput("Ciudad o sector", "Ej. San Francisco de Macorís", value => {
+        state.location = value;
+        askName();
+      });
+    }
+
+    function askName() {
+      addBubble("¿Cómo te llamas? Puedes usar tu nombre de pila o un nombre comercial.");
+      addInput("Nombre para la solicitud", "Tu nombre", value => {
+        state.name = value;
+        askNotes();
+      });
+    }
+
+    function askNotes() {
+      addBubble("Por último, ¿hay algo importante que debamos saber? Por ejemplo, altura del techo, distancia del cableado o si es una instalación exterior.");
+      addInput("Detalles adicionales (opcional)", "Escribe un detalle o pon: Ninguno", value => {
+        state.notes = value;
+        showSummary();
+      });
+    }
+
+    function calculate() {
+      const base = CONFIG.laborPerCameraDOP[state.type] * state.quantity;
+      const wiringExtra = state.wiring === "difficult"
+        ? CONFIG.difficultWiringExtraPerCameraDOP * state.quantity
+        : 0;
+      const recorder = state.recorder ? CONFIG.recorderSetupDOP : 0;
+      const mobile = state.mobile ? CONFIG.mobileSetupDOP : 0;
+      const labor = base + wiringExtra + recorder + mobile;
+      const equipment = state.quoteType === "full"
+        ? state.equipmentCostPerCameraDOP * state.quantity
+        : 0;
+      const materials = state.quoteType === "full" ? state.materialsCostDOP : 0;
+
+      return {
+        base, wiringExtra, recorder, mobile, labor, equipment, materials,
+        total: labor + equipment + materials
+      };
+    }
+
+    function formatDOP(value) {
+      return new Intl.NumberFormat("es-DO", {
+        style: "currency", currency: "DOP", maximumFractionDigits: 0
+      }).format(value).replace("DOP", "RD$");
+    }
+
+    function formatUSD(value) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency", currency: "USD", maximumFractionDigits: 2
+      }).format(value);
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[char]));
+    }
+
+    function showSummary() {
+      step = 12;
+      const costs = calculate();
+      const usdReady = !CONFIG.requireVerifiedExchangeRate &&
+        Number.isFinite(CONFIG.dopPerUsd) && CONFIG.dopPerUsd > 0;
+      const fullNeedsCosts = state.quoteType === "full" &&
+        state.equipmentCostPerCameraDOP === 0;
+      const totalLines = [
+        ["Mano de obra por cámaras", formatDOP(costs.base)],
+        ["Recargo por cableado difícil", formatDOP(costs.wiringExtra)],
+        ["Configuración DVR/NVR", formatDOP(costs.recorder)],
+        ["Configuración en móvil", formatDOP(costs.mobile)]
+      ];
+
+      if (state.quoteType === "full") {
+        totalLines.push(["Equipos (costo indicado)", formatDOP(costs.equipment)]);
+        totalLines.push(["Materiales (costo indicado)", formatDOP(costs.materials)]);
+      }
+
+      const rows = totalLines.map(([label, value]) =>
+        `<div class="total-line"><span>${label}</span><strong>${value}</strong></div>`
+      ).join("");
+
+      const usdLine = usdReady
+        ? `<div class="total-line"><span>Total aproximado en US$</span><strong>${formatUSD(costs.total / CONFIG.dopPerUsd)}</strong></div>`
+        : `<div class="total-line"><span>Total en US$</span><strong>Configura una tasa válida</strong></div>`;
+
+      const summaryText = [
+        "ENMX SECURITY CAM — SOLICITUD DE COTIZACIÓN",
+        "Nombre: " + state.name,
+        "Ubicación general: " + state.location,
+        "Tipo de cámara: " + cameraNames[state.type],
+        "Cantidad: " + state.quantity,
+        "Lugar: " + propertyNames[state.property],
+        "Tipo de cotización: " + (state.quoteType === "labor" ? "Solo mano de obra" : "Equipos + materiales + instalación"),
+        "Cableado: " + ({easy:"Fácil / listo", normal:"Normal", difficult:"Difícil", unknown:"No está seguro"}[state.wiring]),
+        "Estado de equipos: " + ({have:"Tiene equipos", some:"Tiene algunos equipos", none:"Necesita comprar todo"}[state.equipmentStatus]),
+        "Configuración DVR/NVR: " + (state.recorder ? "Sí" : "No"),
+        "Configuración móvil: " + (state.mobile ? "Sí" : "No"),
+        "Mano de obra y extras: " + formatDOP(costs.labor),
+        "Equipos: " + formatDOP(costs.equipment),
+        "Materiales: " + formatDOP(costs.materials),
+        "TOTAL ESTIMADO RD$: " + formatDOP(costs.total),
+        "Total aproximado US$: " + (usdReady ? formatUSD(costs.total / CONFIG.dopPerUsd) : "Tasa no configurada"),
+        "Detalles: " + (state.notes || "Ninguno"),
+        "AVISO: estimado preliminar sujeto a inspección y confirmación."
+      ].join("\n");
+
+      summary.innerHTML = `
+        <h3>Resumen de tu solicitud</h3>
+        <div class="summary-grid">
+          <div class="summary-item"><small>Cliente</small><strong>${escapeHTML(state.name)}</strong></div>
+          <div class="summary-item"><small>Ubicación</small><strong>${escapeHTML(state.location)}</strong></div>
+          <div class="summary-item"><small>Sistema</small><strong>${cameraNames[state.type]}</strong></div>
+          <div class="summary-item"><small>Cantidad</small><strong>${state.quantity} cámara(s)</strong></div>
+          <div class="summary-item"><small>Tipo de servicio</small><strong>${state.quoteType === "labor" ? "Solo mano de obra" : "Equipos, materiales e instalación"}</strong></div>
+          <div class="summary-item"><small>Condición de cableado</small><strong>${({easy:"Fácil / listo", normal:"Normal", difficult:"Difícil", unknown:"Por evaluar"}[state.wiring])}</strong></div>
+        </div>
+        <div class="totals">
+          ${rows}
+          <div class="total-line final"><span>Total estimado RD$</span><strong>${formatDOP(costs.total)}</strong></div>
+          ${usdLine}
+        </div>
+        <div class="notice">
+          ${fullNeedsCosts ? "Atención: el costo de equipos se dejó en RD$0 porque no se introdujo un precio. El total no incluye equipos cuyo costo esté pendiente. " : ""}
+          Los precios son estimados editables, no una oferta definitiva. El cableado, las alturas, las distancias, los materiales y las condiciones del lugar pueden cambiar el costo. Confirma todos los importes antes de aceptar un trabajo.
+          ${usdReady ? "La conversión a dólares usa una tasa de ejemplo configurable en el código; verifícala antes de compartir el estimado." : ""}
+        </div>
+        <div class="options">
+          <button type="button" class="btn" id="copyQuote">Copiar resumen</button>
+          <button type="button" class="btn secondary" id="restart">Nueva cotización</button>
+        </div>
+        <p class="hint">Esta versión funciona localmente en el navegador. No envía los datos a la empresa ni los guarda en un servidor.</p>
+      `;
+      summary.classList.remove("hidden");
+      chat.appendChild(summary);
+      chat.scrollTop = chat.scrollHeight;
+
+      document.getElementById("copyQuote").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(summaryText);
+          addBubble("Resumen copiado. Puedes pegarlo en un documento o enviarlo por el canal que elijas.");
+        } catch {
+          const area = document.createElement("textarea");
+          area.value = summaryText;
+          area.style.position = "fixed";
+          area.style.opacity = "0";
+          document.body.appendChild(area);
+          area.select();
+          const copied = document.execCommand("copy");
+          area.remove();
+          addBubble(copied
+            ? "Resumen copiado. Puedes pegarlo donde lo necesites."
+            : "No se pudo copiar automáticamente. Puedes seleccionar y copiar los detalles manualmente.");
+        }
+      });
+
+      document.getElementById("restart").addEventListener("click", startChat);
+      addBubble("¡Gracias por contactar a Enmx Security Cam! Ya tienes una referencia inicial. Revisa el resumen y confirma los precios y las condiciones antes de cerrar el trabajo.");
+    }
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+    startChat();
+  </script>
+</body>
+</html>

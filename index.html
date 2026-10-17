@@ -399,6 +399,13 @@
     const chat = document.getElementById("chat");
     const summary = document.getElementById("summary");
     let step = 0;
+    let generatedClientCode = "";
+
+    function generateClientCode() {
+      const bytes = new Uint8Array(5);
+      crypto.getRandomValues(bytes);
+      return "ENMX-" + Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("").toUpperCase();
+    }
 
     const cameraNames = {
       cctv: "CCTV / DVR",
@@ -505,6 +512,7 @@
         recorder: false, mobile: false, name: "", location: "", notes: ""
       });
       step = 1;
+      generatedClientCode = "";
       addBubble("¡Hola! Bienvenido a Enmx Security Cam. Te ayudaré a preparar una cotización estimada para tu instalación. ¿Qué tipo de cámaras necesitas?");
       addOptions([
         { label: "CCTV / DVR", value: "cctv" },
@@ -825,7 +833,9 @@
         quoteSendButton.textContent = "Enviando cotización...";
         quoteFeedback.textContent = "";
 
+        const clientCode = generatedClientCode || (generatedClientCode = generateClientCode());
         const quoteDetails = {
+          client_code: clientCode,
           customer_name: customerName,
           phone,
           city,
@@ -876,9 +886,32 @@
             throw new Error("No se pudo guardar la solicitud.");
           }
 
-          quoteFeedback.textContent = "¡Cotización enviada y guardada! Enmx Security Cam ya recibió tu solicitud.";
+          quoteFeedback.textContent = "¡Cotización guardada! Guarda tu número de cliente y envíalo por WhatsApp para que podamos localizar tu solicitud.";
           quoteFeedback.style.color = "#d4af37";
           quoteSendButton.textContent = "Cotización enviada";
+          const oldClientPanel = document.getElementById("enmx-client-code-panel");
+          if (oldClientPanel) oldClientPanel.remove();
+          const clientPanel = document.createElement("div");
+          clientPanel.id = "enmx-client-code-panel";
+          clientPanel.style.cssText = "margin-top:16px;padding:18px;border:1px solid #d4af37;border-radius:10px;background:#17150f;text-align:center;";
+          const waMessage = "Hola, quiero dar seguimiento a mi cotización de Enmx Security Cam. Mi número de cliente es " + clientCode + ". Mi nombre es " + customerName + ".";
+          const waUrl = "https://wa.me/18293281599?text=" + encodeURIComponent(waMessage);
+          clientPanel.innerHTML = `
+            <p style="margin:0 0 6px;color:#c9c2b0;">TU NÚMERO DE CLIENTE</p>
+            <p style="font-size:1.6rem;font-weight:900;letter-spacing:1px;color:#f2d99b;margin:0 0 12px;">${clientCode}</p>
+            <p style="color:#ddd;margin:0 0 14px;">Cópialo y envíanoslo por WhatsApp para encontrar tu cotización rápidamente.</p>
+            <button type="button" class="btn secondary" id="enmx-copy-client-code" style="margin:4px;">Copiar número</button>
+            <a class="btn" href="${waUrl}" target="_blank" rel="noopener noreferrer" style="margin:4px;">Enviar por WhatsApp</a>
+          `;
+          quoteForm.insertAdjacentElement("afterend", clientPanel);
+          document.getElementById("enmx-copy-client-code").addEventListener("click", async () => {
+            try {
+              await navigator.clipboard.writeText(clientCode);
+              document.getElementById("enmx-copy-client-code").textContent = "Número copiado";
+            } catch {
+              quoteFeedback.textContent = "Tu número de cliente es " + clientCode + ". Selecciónalo y cópialo para enviarlo por WhatsApp.";
+            }
+          });
         } catch (error) {
           quoteFeedback.textContent = "No se pudo guardar la cotización. Comprueba tu conexión e inténtalo otra vez.";
           quoteFeedback.style.color = "#ff8585";

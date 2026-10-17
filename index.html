@@ -650,14 +650,7 @@
       addBubble("¿Cómo te llamas? Puedes usar tu nombre de pila o un nombre comercial.");
       addInput("Nombre para la solicitud", "Tu nombre", value => {
         state.name = value;
-        askNotes();
-      });
-    }
-
-    function askNotes() {
-      addBubble("Por último, ¿hay algo importante que debamos saber? Por ejemplo, altura del techo, distancia del cableado o si es una instalación exterior.");
-      addInput("Detalles adicionales (opcional)", "Escribe un detalle o pon: Ninguno", value => {
-        state.notes = value;
+        state.notes = "";
         showSummary();
       });
     }

@@ -63,7 +63,7 @@
       "Content-Type":"application/json",...(options.headers||{})
     }});
     if(response.status===401){clearSession();throw new Error("La sesión expiró. Vuelve a iniciar sesión.");}
-    if(!response.ok){const body=await response.text();console.error("Supabase API",response.status,body);throw new Error("Supabase rechazó la solicitud ("+response.status+"). Verifica las políticas y vuelve a intentar.");}
+    if(!response.ok){const body=await response.text();console.error("Supabase API",response.status,body);let detail=body;try{const parsed=JSON.parse(body);detail=parsed.message||parsed.details||parsed.hint||parsed.error_description||body;}catch{}throw new Error("Supabase ("+response.status+"): "+String(detail).slice(0,260));}
     if(response.status===204) return null;
     const type=response.headers.get("content-type")||"";
     return type.includes("application/json")?response.json():null;

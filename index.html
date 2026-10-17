@@ -359,9 +359,9 @@
     const CONFIG = {
       // Mano de obra estimada por cámara en RD$.
       laborPerCameraDOP: {
-        cctv: 800,
-        wifi: 600,
-        ip: 900
+        cctv: 1000,
+        wifi: 800,
+        ip: 1200
       },
 
       // Recargo estimado por cámara cuando el cableado es difícil.
@@ -513,7 +513,7 @@
       });
       step = 1;
       generatedClientCode = "";
-      addBubble("¡Hola! Bienvenido a Enmx Security Cam. Te ayudaré a preparar una cotización estimada para tu instalación. ¿Qué tipo de cámaras necesitas?");
+      addBubble("¡Hola! Bienvenido a Enmx Security Cam. Te ayudaré a preparar una cotización estimada. CCTV son cámaras de seguridad que normalmente se conectan por cable. El DVR es el grabador que recibe las cámaras y guarda las imágenes para verlas después. Si no sabes cuál necesitas, elige “Necesito orientación”. ¿Qué tipo de sistema buscas?");
       addOptions([
         { label: "CCTV / DVR", value: "cctv" },
         { label: "Wi-Fi", value: "wifi" },
@@ -565,20 +565,6 @@
         { label: "Equipos + materiales + instalación", value: "full" }
       ], value => {
         state.quoteType = value;
-        askWiring();
-      });
-    }
-
-    function askWiring() {
-      step = 5;
-      addBubble("¿Cómo está el lugar para pasar cables o montar las cámaras?");
-      addOptions([
-        { label: "Fácil / cableado listo", value: "easy" },
-        { label: "Normal", value: "normal" },
-        { label: "Difícil / mucha altura o distancia", value: "difficult" },
-        { label: "No estoy seguro", value: "unknown" }
-      ], value => {
-        state.wiring = value;
         askEquipment();
       });
     }
@@ -595,7 +581,7 @@
         if (state.quoteType === "full") {
           askEquipmentCosts();
         } else {
-          askRecorder();
+          askMobile();
         }
       });
     }
@@ -612,57 +598,30 @@
       addBubble("Ahora introduce el costo total estimado de materiales adicionales para todo el trabajo en RD$. Si no lo sabes, escribe 0.");
       addInput("Costo total de materiales (RD$)", "Ej. 1800 o 0", value => {
         state.materialsCostDOP = value;
-        askRecorder();
+        askMobile();
       }, "number", 0, 10000000);
     }
 
-    function askRecorder() {
-      addBubble("¿Hay que configurar un DVR/NVR o grabador?");
-      addOptions([
-        { label: "Sí", value: true },
-        { label: "No", value: false }
-      ], value => {
-        state.recorder = value;
-        askMobile();
-      });
-    }
-
     function askMobile() {
-      addBubble("¿Quieres configurar la visualización de las cámaras desde el móvil?");
+      addBubble("¿Quieres poder ver las imágenes de tus cámaras en vivo desde tu teléfono, incluso cuando estés fuera de casa? Si respondes que sí, incluiremos la configuración para que puedas verlas desde el móvil.");
       addOptions([
         { label: "Sí", value: true },
         { label: "No", value: false }
       ], value => {
         state.mobile = value;
-        askLocation();
-      });
-    }
-
-    function askLocation() {
-      addBubble("¿En qué ciudad o sector se realizará el trabajo? No hace falta que compartas tu dirección exacta.");
-      addInput("Ciudad o sector", "Ej. San Francisco de Macorís", value => {
-        state.location = value;
-        askName();
-      });
-    }
-
-    function askName() {
-      addBubble("¿Cómo te llamas? Puedes usar tu nombre de pila o un nombre comercial.");
-      addInput("Nombre para la solicitud", "Tu nombre", value => {
-        state.name = value;
-        state.notes = "";
+        state.recorder = true;
         showSummary();
       });
     }
 
     function calculate() {
       const base = CONFIG.laborPerCameraDOP[state.type] * state.quantity;
-      const wiringExtra = state.wiring === "difficult"
-        ? CONFIG.difficultWiringExtraPerCameraDOP * state.quantity
-        : 0;
-      const recorder = state.recorder ? CONFIG.recorderSetupDOP : 0;
+      // Tarifa estándar de instalación: no se pregunta por la facilidad del cableado.
+      const wiringExtra = 0;
+      // La configuración del grabador es obligatoria y siempre se cobra.
+      const recorder = CONFIG.recorderSetupDOP;
       const mobile = state.mobile ? CONFIG.mobileSetupDOP : 0;
-      const labor = base + wiringExtra + recorder + mobile;
+      const labor = base + recorder + mobile;
       const equipment = state.quoteType === "full"
         ? state.equipmentCostPerCameraDOP * state.quantity
         : 0;
@@ -701,8 +660,7 @@
         state.equipmentCostPerCameraDOP === 0;
       const totalLines = [
         ["Mano de obra por cámaras", formatDOP(costs.base)],
-        ["Recargo por cableado difícil", formatDOP(costs.wiringExtra)],
-        ["Configuración DVR/NVR", formatDOP(costs.recorder)],
+        ["Configuración obligatoria del grabador DVR/NVR", formatDOP(costs.recorder)],
         ["Configuración en móvil", formatDOP(costs.mobile)]
       ];
 
@@ -727,28 +685,26 @@
         "Cantidad: " + state.quantity,
         "Lugar: " + propertyNames[state.property],
         "Tipo de cotización: " + (state.quoteType === "labor" ? "Solo mano de obra" : "Equipos + materiales + instalación"),
-        "Cableado: " + ({easy:"Fácil / listo", normal:"Normal", difficult:"Difícil", unknown:"No está seguro"}[state.wiring]),
+        "Instalación: tarifa estándar; condiciones especiales se confirman al revisar el lugar",
         "Estado de equipos: " + ({have:"Tiene equipos", some:"Tiene algunos equipos", none:"Necesita comprar todo"}[state.equipmentStatus]),
-        "Configuración DVR/NVR: " + (state.recorder ? "Sí" : "No"),
+        "Configuración DVR/NVR: Obligatoria e incluida en el cálculo",
         "Configuración móvil: " + (state.mobile ? "Sí" : "No"),
         "Mano de obra y extras: " + formatDOP(costs.labor),
         "Equipos: " + formatDOP(costs.equipment),
         "Materiales: " + formatDOP(costs.materials),
         "TOTAL ESTIMADO RD$: " + formatDOP(costs.total),
         "Total aproximado US$: " + (usdReady ? formatUSD(costs.total / CONFIG.dopPerUsd) : "Tasa no configurada"),
-        "Detalles: " + (state.notes || "Ninguno"),
         "AVISO: estimado preliminar sujeto a inspección y confirmación."
       ].join("\n");
 
       summary.innerHTML = `
         <h3>Resumen de tu solicitud</h3>
         <div class="summary-grid">
-          <div class="summary-item"><small>Cliente</small><strong>${escapeHTML(state.name)}</strong></div>
-          <div class="summary-item"><small>Ubicación</small><strong>${escapeHTML(state.location)}</strong></div>
+          <div class="summary-item"><small>Cliente</small><strong>Se completa en el formulario final</strong></div>
+          <div class="summary-item"><small>Ubicación</small><strong>Se completa en el formulario final</strong></div>
           <div class="summary-item"><small>Sistema</small><strong>${cameraNames[state.type]}</strong></div>
           <div class="summary-item"><small>Cantidad</small><strong>${state.quantity} cámara(s)</strong></div>
           <div class="summary-item"><small>Tipo de servicio</small><strong>${state.quoteType === "labor" ? "Solo mano de obra" : "Equipos, materiales e instalación"}</strong></div>
-          <div class="summary-item"><small>Condición de cableado</small><strong>${({easy:"Fácil / listo", normal:"Normal", difficult:"Difícil", unknown:"Por evaluar"}[state.wiring])}</strong></div>
         </div>
         <div class="totals">
           ${rows}
@@ -770,11 +726,11 @@
         </div>
         <form id="enmx-quote-submit-form" style="display:grid;gap:12px;margin-top:14px;">
           <label for="enmx-quote-name">Nombre completo</label>
-          <input id="enmx-quote-name" name="customer_name" required minlength="2" maxlength="100" autocomplete="name" value="${escapeHTML(state.name)}" placeholder="Tu nombre completo" style="box-sizing:border-box;width:100%;padding:12px;background:#171717;color:#fff;border:1px solid #555;border-radius:6px;">
+          <input id="enmx-quote-name" name="customer_name" required minlength="2" maxlength="100" autocomplete="name" placeholder="Tu nombre completo" style="box-sizing:border-box;width:100%;padding:12px;background:#171717;color:#fff;border:1px solid #555;border-radius:6px;">
           <label for="enmx-quote-phone">Teléfono de contacto</label>
           <input id="enmx-quote-phone" name="phone" type="tel" required minlength="7" maxlength="30" autocomplete="tel" placeholder="Ej. 8091234567" style="box-sizing:border-box;width:100%;padding:12px;background:#171717;color:#fff;border:1px solid #555;border-radius:6px;">
           <label for="enmx-quote-city">Ciudad o sector de instalación</label>
-          <input id="enmx-quote-city" name="city" required minlength="2" maxlength="100" autocomplete="address-level2" value="${escapeHTML(state.location)}" placeholder="Ciudad o sector" style="box-sizing:border-box;width:100%;padding:12px;background:#171717;color:#fff;border:1px solid #555;border-radius:6px;">
+          <input id="enmx-quote-city" name="city" required minlength="2" maxlength="100" autocomplete="address-level2" placeholder="Ciudad o sector" style="box-sizing:border-box;width:100%;padding:12px;background:#171717;color:#fff;border:1px solid #555;border-radius:6px;">
           <button type="submit" class="btn" id="enmx-quote-send">Enviar cotización</button>
           <p id="enmx-quote-feedback" class="hint" role="status" aria-live="polite"></p>
         </form>
@@ -785,11 +741,16 @@
 
       document.getElementById("copyQuote").addEventListener("click", async () => {
         try {
-          await navigator.clipboard.writeText(summaryText);
+          const contactText = "\nNombre: " + (document.getElementById("enmx-quote-name")?.value.trim() || "Pendiente") +
+            "\nTeléfono: " + (document.getElementById("enmx-quote-phone")?.value.trim() || "Pendiente") +
+            "\nCiudad/sector: " + (document.getElementById("enmx-quote-city")?.value.trim() || "Pendiente");
+          await navigator.clipboard.writeText(summaryText + contactText);
           addBubble("Resumen copiado. Puedes pegarlo en un documento o enviarlo por el canal que elijas.");
         } catch {
           const area = document.createElement("textarea");
-          area.value = summaryText;
+          area.value = summaryText + "\nNombre: " + (document.getElementById("enmx-quote-name")?.value.trim() || "Pendiente") +
+            "\nTeléfono: " + (document.getElementById("enmx-quote-phone")?.value.trim() || "Pendiente") +
+            "\nCiudad/sector: " + (document.getElementById("enmx-quote-city")?.value.trim() || "Pendiente");
           area.style.position = "fixed";
           area.style.opacity = "0";
           document.body.appendChild(area);

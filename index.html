@@ -163,18 +163,34 @@
     .options {
       display: flex;
       flex-wrap: wrap;
-      gap: 9px;
-      margin-top: 12px;
+      gap: 10px;
+      margin-top: 14px;
     }
     .option {
-      color: var(--text);
-      background: #202020;
-      border: 1px solid #494236;
-      padding: 10px 13px;
-      border-radius: 9px;
-      text-align: left;
+      color: #17130a;
+      background: #ffd43b;
+      border: 2px solid #ffd43b;
+      padding: 12px 15px;
+      min-height: 46px;
+      border-radius: 11px;
+      text-align: center;
+      font-weight: 800;
+      line-height: 1.25;
+      box-shadow: 0 2px 0 rgba(0,0,0,.18);
+      transition: background .15s, transform .15s, border-color .15s;
+      touch-action: manipulation;
     }
-    .option:hover { border-color: var(--gold); background: #29251b; }
+    .option:hover, .option:focus-visible {
+      border-color: #fff0a3;
+      background: #ffe783;
+      outline: 2px solid #fff0a3;
+      outline-offset: 2px;
+    }
+    .option:active { transform: scale(.98); }
+    .option:disabled { opacity: .65; cursor: default; }
+    .camera-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+    .camera-options .option { min-height: 64px; font-size: 1.15rem; }
+    .camera-options .option small { display: block; font-size: .72rem; font-weight: 600; margin-top: 3px; }
     .field-row { display: flex; gap: 8px; margin-top: 10px; }
     .field-row input, .field-row select {
       min-width: 0;
@@ -249,16 +265,31 @@
       flex-wrap: wrap;
     }
     @media (max-width: 650px) {
-      .hero { padding-top: 52px; }
-      .features, .info-grid { grid-template-columns: 1fr; }
+      .container { width: min(100% - 24px, 1100px); }
+      .hero { padding: 42px 0 36px; }
+      h1 { font-size: clamp(2.25rem, 11vw, 3.5rem); letter-spacing: -1.2px; }
+      .hero p { font-size: 1rem; }
+      .features, .info-grid { grid-template-columns: 1fr; gap: 12px; }
+      .feature, .info-card { padding: 18px; }
       .summary-grid { grid-template-columns: 1fr; }
-      .nav { align-items: flex-start; }
-      .nav a { text-align: right; }
-      #chat { padding: 13px; }
-      .bubble { max-width: 100%; }
+      .nav { align-items: center; gap: 10px; padding: 14px 0; }
+      .brand { font-size: .9rem; letter-spacing: 1px; }
+      .nav a { text-align: right; font-size: .82rem; }
+      #chat { padding: 12px; min-height: 180px; }
+      .bubble { max-width: 100%; padding: 12px; }
       .field-row { flex-direction: column; }
-      .btn { width: 100%; }
-      .chat-header { align-items: flex-start; flex-direction: column; }
+      .btn { width: 100%; min-height: 46px; }
+      .chat-header { align-items: flex-start; flex-direction: column; padding: 15px; }
+      .options { gap: 8px; }
+      .options:not(.camera-options) .option { flex: 1 1 calc(50% - 8px); }
+      .camera-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .camera-options .option { min-height: 68px; }
+      .section-title h2 { line-height: 1.15; }
+      input, select { font-size: 16px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: .01ms !important; }
     }
   </style>
 </head>
@@ -581,11 +612,36 @@
     function askQuantity() {
       beginQuestion(askQuantity);
       step = 2;
-      addBubble("¿Cuántas cámaras quieres instalar?");
-      addInput("Cantidad de cámaras", "Ej. 4", value => {
-        state.quantity = value;
-        askProperty();
-      }, "number", 1, 100);
+      addBubble("¿Cuántas cámaras quieres instalar? Elige una de las opciones. Si no estás seguro, selecciona la cantidad más cercana y luego podremos revisar tu proyecto.");
+      const bubble = document.createElement("div");
+      bubble.className = "bubble bot";
+      const wrapper = document.createElement("div");
+      wrapper.className = "options camera-options";
+      [
+        { label: "2<small>Cámaras</small>", value: 2 },
+        { label: "4<small>Cámaras</small>", value: 4 },
+        { label: "8<small>Cámaras</small>", value: 8 },
+        { label: "16<small>Cámaras</small>", value: 16 },
+        { label: "24<small>Cámaras</small>", value: 24 },
+        { label: "32<small>Cámaras</small>", value: 32 }
+      ].forEach(item => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "option";
+        button.innerHTML = item.label;
+        button.setAttribute("aria-label", item.value + " cámaras");
+        button.addEventListener("click", () => {
+          wrapper.querySelectorAll("button").forEach(b => b.disabled = true);
+          addBubble(item.value + " cámaras", "user");
+          state.quantity = item.value;
+          askProperty();
+        });
+        wrapper.appendChild(button);
+      });
+      bubble.appendChild(wrapper);
+      addBackButton(bubble);
+      chat.appendChild(bubble);
+      chat.scrollTop = chat.scrollHeight;
     }
 
     function askProperty() {

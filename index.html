@@ -891,32 +891,24 @@
             throw new Error("No se pudo guardar la solicitud.");
           }
 
-          quoteFeedback.textContent = "¡Cotización guardada! Guarda tu número de cliente y envíalo por WhatsApp para que podamos localizar tu solicitud.";
-          quoteFeedback.style.color = "#d4af37";
-          quoteSendButton.textContent = "Cotización enviada";
           const oldClientPanel = document.getElementById("enmx-client-code-panel");
           if (oldClientPanel) oldClientPanel.remove();
           const clientPanel = document.createElement("div");
           clientPanel.id = "enmx-client-code-panel";
-          clientPanel.style.cssText = "margin-top:16px;padding:18px;border:1px solid #d4af37;border-radius:10px;background:#17150f;text-align:center;";
+          clientPanel.style.cssText = "margin:16px auto;padding:22px 18px;border:1px solid #d4af37;border-radius:10px;background:#17150f;text-align:center;max-width:520px;";
           const waMessage = "Hola, quiero dar seguimiento a mi cotización de Enmx Security Cam. Mi número de cliente es " + clientCode + ". Mi nombre es " + customerName + ".";
           const waUrl = "https://wa.me/18293281599?text=" + encodeURIComponent(waMessage);
           clientPanel.innerHTML = `
+            <p style="margin:0 0 8px;color:#c9c2b0;">¡COTIZACIÓN ENVIADA!</p>
             <p style="margin:0 0 6px;color:#c9c2b0;">TU NÚMERO DE CLIENTE</p>
-            <p style="font-size:1.6rem;font-weight:900;letter-spacing:1px;color:#f2d99b;margin:0 0 12px;">${clientCode}</p>
-            <p style="color:#ddd;margin:0 0 14px;">Cópialo y envíanoslo por WhatsApp para encontrar tu cotización rápidamente.</p>
-            <button type="button" class="btn secondary" id="enmx-copy-client-code" style="margin:4px;">Copiar número</button>
-            <a class="btn" href="${waUrl}" target="_blank" rel="noopener noreferrer" style="margin:4px;">Enviar por WhatsApp</a>
+            <p style="font-size:1.6rem;font-weight:900;letter-spacing:1px;color:#f2d99b;margin:0 0 18px;">${clientCode}</p>
+            <a class="btn" href="${waUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;margin:4px;">Mandar al WhatsApp</a>
           `;
-          quoteForm.insertAdjacentElement("afterend", clientPanel);
-          document.getElementById("enmx-copy-client-code").addEventListener("click", async () => {
-            try {
-              await navigator.clipboard.writeText(clientCode);
-              document.getElementById("enmx-copy-client-code").textContent = "Número copiado";
-            } catch {
-              quoteFeedback.textContent = "Tu número de cliente es " + clientCode + ". Selecciónalo y cópialo para enviarlo por WhatsApp.";
-            }
-          });
+          summary.innerHTML = "";
+          summary.appendChild(clientPanel);
+          summary.classList.remove("hidden");
+          summary.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => clientPanel.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
         } catch (error) {
           quoteFeedback.textContent = "No se pudo guardar la cotización. Comprueba tu conexión e inténtalo otra vez.";
           quoteFeedback.style.color = "#ff8585";

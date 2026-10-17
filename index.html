@@ -357,20 +357,20 @@
       El cliente verá un aviso de que el precio es estimado.
     */
     const CONFIG = {
-      // Mano de obra estimada por cámara en RD$.
+      // Precio por cámara, incluyendo cableado de dificultad moderada (RD$).
       laborPerCameraDOP: {
-        cctv: 1200,
-        wifi: 900,
-        ip: 1500
+        cctv: 800,
+        wifi: 500,
+        ip: 1000
       },
 
-      // Recargo por cámara para estimar cableado de dificultad media.
-      // Se confirma el precio final después de revisar el lugar.
-      difficultWiringExtraPerCameraDOP: 450,
+      // El precio por cámara ya contempla el cableado estimado.
+      // No se suma un recargo adicional por cableado.
+      difficultWiringExtraPerCameraDOP: 0,
 
-      // Configuración de DVR/NVR y visualización desde el móvil.
-      recorderSetupDOP: 1800,
-      mobileSetupDOP: 600,
+      // Configuración de DVR/NVR y visualización desde el móvil (RD$).
+      recorderSetupDOP: 1300,
+      mobileSetupDOP: 500,
 
       // Cambia esta tasa por la que decidas utilizar.
       // Es solo un valor inicial de ejemplo, NO una tasa verificada.
@@ -711,9 +711,8 @@
       const fullNeedsCosts = state.quoteType === "full" &&
         state.equipmentCostPerCameraDOP === 0;
       const totalLines = [
-        ["Mano de obra por cámaras", formatDOP(costs.base)],
-        ["Cableado de dificultad media (estimado)", formatDOP(costs.wiringExtra)],
-        ["Configuración obligatoria del grabador DVR/NVR", formatDOP(costs.recorder)],
+        ["Instalación y cableado por cámaras", formatDOP(costs.base)],
+        ["Configuración del grabador DVR/NVR", formatDOP(costs.recorder)],
         ["Configuración en móvil", formatDOP(costs.mobile)]
       ];
 

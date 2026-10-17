@@ -820,7 +820,10 @@
       const quoteSendButton = document.getElementById("enmx-quote-send");
       const quoteFeedback = document.getElementById("enmx-quote-feedback");
 
-      quoteForm.addEventListener("submit", async (event) => {
+      let reviewPanel = null;
+      let quoteAlreadySaved = false;
+
+      quoteForm.addEventListener("submit", (event) => {
         event.preventDefault();
         if (!quoteForm.reportValidity()) return;
 
@@ -829,94 +832,165 @@
         const city = document.getElementById("enmx-quote-city").value.trim();
 
         if (customerName.length < 2 || phone.length < 7 || city.length < 2) {
-          quoteFeedback.textContent = "Revisa el nombre, teléfono y ciudad antes de enviar.";
+          quoteFeedback.textContent = "Revisa el nombre, teléfono y ciudad antes de continuar.";
           quoteFeedback.style.color = "#ff8585";
           return;
         }
 
-        quoteSendButton.disabled = true;
-        quoteSendButton.textContent = "Enviando cotización...";
         quoteFeedback.textContent = "";
+        if (reviewPanel) reviewPanel.remove();
 
-        const clientCode = generatedClientCode || (generatedClientCode = generateClientCode());
-        const quoteDetails = {
-          client_code: clientCode,
-          customer_name: customerName,
-          phone,
-          city,
-          type: state.type,
-          camera_type: cameraNames[state.type],
-          quantity: state.quantity,
-          property: propertyNames[state.property],
-          quote_type: state.quoteType,
-          wiring: ({easy:"Fácil / listo", normal:"Normal", difficult:"Difícil", unknown:"Por evaluar"}[state.wiring]),
-          equipment_status: ({have:"Tiene equipos", some:"Tiene algunos equipos", none:"Necesita comprar todo"}[state.equipmentStatus]),
-          equipment_cost_per_camera_dop: state.equipmentCostPerCameraDOP,
-          materials_cost_dop: state.materialsCostDOP,
-          recorder_setup: state.recorder,
-          mobile_setup: state.mobile,
-          notes: state.notes || "",
-          cost_breakdown_dop: costs,
-          exchange_rate_dop_per_usd: usdReady ? CONFIG.dopPerUsd : null,
-          estimated_total_dop: costs.total,
-          estimated_total_usd: usdReady ? Number((costs.total / CONFIG.dopPerUsd).toFixed(2)) : null,
-          estimate_notice: "Estimado preliminar sujeto a inspección y confirmación."
-        };
-
-        const supabaseUrl = "https://tedtxusrtytqnjxloqim.supabase.co";
-        const supabasePublishableKey = "sb_publishable_HGsE9OPOuPS7iGbC4qUoeQ_FGTfGIrT";
-
-        try {
-          const response = await fetch(`${supabaseUrl}/rest/v1/cotizaciones`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": supabasePublishableKey,
-              "Authorization": `Bearer ${supabasePublishableKey}`,
-              "Prefer": "return=minimal"
-            },
-            body: JSON.stringify({
-              customer_name: customerName,
-              phone,
-              quote: quoteDetails,
-              total_dop: costs.total,
-              total_usd: usdReady ? Number((costs.total / CONFIG.dopPerUsd).toFixed(2)) : null,
-              source: "chatbot"
-            })
-          });
-
-          if (!response.ok) {
-            const detail = await response.text();
-            console.error("Supabase cotizaciones error:", response.status, detail);
-            throw new Error("No se pudo guardar la solicitud.");
+        reviewPanel = document.createElement("section");
+        reviewPanel.id = "enmx-quote-review";
+        reviewPanel.style.cssText = "margin-top:18px;padding:18px;border:1px solid #d4af37;border-radius:10px;background:#17150f;";
+        reviewPanel.innerHTML = `
+          <h3 style="margin:0 0 8px;color:#f2d99b;">Revisa tu cotización antes de aceptarla</h3>
+          <p style="margin:0 0 12px;color:#c9c2b0;">Comprueba tus datos y los importes. Todavía no se enviará la solicitud hasta que aceptes.</p>
+          <div class="summary-grid">
+            <div class="summary-item"><small>Nombre</small><strong>${escapeHTML(customerName)}</strong></div>
+            <div class="summary-item"><small>Teléfono</small><strong>${escapeHTML(phone)}</strong></div>
+            <div class="summary-item"><small>Ciudad / sector</small><strong>${escapeHTML(city)}</strong></div>
+            <div class="summary-item"><small>Sistema y cantidad</small><strong>${escapeHTML(cameraNames[state.type])} · ${state.quantity} cámara(s)</strong></div>
+          </div>
+          <div class="totals">
+            ${rows}
+            <div class="total-line final"><span>Total estimado RD$</span><strong>${formatDOP(costs.total)}</strong></div>
+            ${usdLine}
+          </div>
+          <div class="notice">${fullNeedsCosts ? "Atención: el costo de equipos se dejó en RD$0 porque no se introdujo un precio. El total no incluye equipos cuyo costo esté pendiente. " : ""}Este es un estimado preliminar sujeto a inspección y confirmación. Revisa los precios antes de aceptar.</div>
+          <label style="display:flex;align-items:flex-start;gap:10px;margin:14px 0;color:#f7f4ed;">
+            <input id="enmx-accept-estimate" type="checkbox" style="margin-top:6px;accent-color:#d7b568;width:18px;height:18px;flex-shrink:0;">
+            <span>Acepto que esta es una cotización estimada y autorizo enviar mis datos y la solicitud a ENMX Security Cam para darle seguimiento.</span>
+          </label>
+          <div class="options">
+            <button type="button" class="btn" id="enmx-accept-send">Aceptar cotización y generar número de cliente</button>
+            <button type="button" class="btn secondary" id="enmx-edit-contact">Editar mis datos</button>
+          </div>
+          <p id="enmx-review-feedback" class="hint" role="status" aria-live="polite"></p>
+        `;
+        quoteForm.insertAdjacentElement("afterend", reviewPanel);
+        document.getElementById("enmx-edit-contact").addEventListener("click", () => {
+          reviewPanel.remove();
+          reviewPanel = null;
+          quoteForm.scrollIntoView({behavior:"smooth",block:"center"});
+        });
+        document.getElementById("enmx-accept-send").addEventListener("click", async () => {
+          const accepted = document.getElementById("enmx-accept-estimate").checked;
+          const reviewFeedback = document.getElementById("enmx-review-feedback");
+          const acceptButton = document.getElementById("enmx-accept-send");
+          if (!accepted) {
+            reviewFeedback.textContent = "Marca la casilla para confirmar que revisaste y aceptas el estimado.";
+            reviewFeedback.style.color = "#ff8585";
+            return;
           }
+          if (quoteAlreadySaved) return;
+          acceptButton.disabled = true;
+          acceptButton.textContent = "Guardando cotización...";
+          reviewFeedback.textContent = "Guardando tu solicitud de forma segura…";
 
-          const oldClientPanel = document.getElementById("enmx-client-code-panel");
-          if (oldClientPanel) oldClientPanel.remove();
-          const clientPanel = document.createElement("div");
-          clientPanel.id = "enmx-client-code-panel";
-          clientPanel.style.cssText = "margin:16px auto;padding:22px 18px;border:1px solid #d4af37;border-radius:10px;background:#17150f;text-align:center;max-width:520px;";
-          const waMessage = "Hola, quiero dar seguimiento a mi cotización de Enmx Security Cam. Mi número de cliente es " + clientCode + ". Mi nombre es " + customerName + ".";
-          const waUrl = "https://wa.me/18293281599?text=" + encodeURIComponent(waMessage);
-          clientPanel.innerHTML = `
-            <p style="margin:0 0 8px;color:#c9c2b0;">¡COTIZACIÓN ENVIADA!</p>
-            <p style="margin:0 0 6px;color:#c9c2b0;">TU NÚMERO DE CLIENTE</p>
-            <p style="font-size:1.6rem;font-weight:900;letter-spacing:1px;color:#f2d99b;margin:0 0 18px;">${clientCode}</p>
-            <a class="btn" href="${waUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;margin:4px;">Mandar al WhatsApp</a>
-            <button type="button" class="btn secondary" id="enmx-new-quote" style="display:inline-block;margin:4px;">Hacer otra cotización</button>
-          `;
-          summary.innerHTML = "";
-          summary.appendChild(clientPanel);
-          document.getElementById("enmx-new-quote").addEventListener("click", startChat);
-          summary.classList.remove("hidden");
-          summary.scrollIntoView({ behavior: "smooth", block: "center" });
-          setTimeout(() => clientPanel.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
-        } catch (error) {
-          quoteFeedback.textContent = "No se pudo guardar la cotización. Comprueba tu conexión e inténtalo otra vez.";
-          quoteFeedback.style.color = "#ff8585";
-          quoteSendButton.disabled = false;
-          quoteSendButton.textContent = "Reintentar envío";
-        }
+          const clientCode = generatedClientCode || (generatedClientCode = generateClientCode());
+          const quoteDetails = {
+            client_code: clientCode,
+            customer_name: customerName,
+            phone,
+            city,
+            type: state.type,
+            camera_type: cameraNames[state.type],
+            quantity: state.quantity,
+            property: propertyNames[state.property],
+            quote_type: state.quoteType,
+            wiring: ({easy:"Fácil / listo", normal:"Normal", difficult:"Difícil", unknown:"Por evaluar"}[state.wiring]),
+            equipment_status: ({have:"Tiene equipos", some:"Tiene algunos equipos", none:"Necesita comprar todo"}[state.equipmentStatus]),
+            equipment_cost_per_camera_dop: state.equipmentCostPerCameraDOP,
+            materials_cost_dop: state.materialsCostDOP,
+            recorder_setup: state.recorder,
+            mobile_setup: state.mobile,
+            notes: state.notes || "",
+            cost_breakdown_dop: costs,
+            exchange_rate_dop_per_usd: usdReady ? CONFIG.dopPerUsd : null,
+            estimated_total_dop: costs.total,
+            estimated_total_usd: usdReady ? Number((costs.total / CONFIG.dopPerUsd).toFixed(2)) : null,
+            estimate_notice: "Estimado preliminar sujeto a inspección y confirmación.",
+            customer_accepted_estimate: true,
+            customer_accepted_at: new Date().toISOString()
+          };
+
+          const supabaseUrl = "https://tedtxusrtytqnjxloqim.supabase.co";
+          const supabasePublishableKey = "sb_publishable_HGsE9OPOuPS7iGbC4qUoeQ_FGTfGIrT";
+
+          try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/cotizaciones`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "apikey": supabasePublishableKey,
+                "Authorization": `Bearer ${supabasePublishableKey}`,
+                "Prefer": "return=minimal"
+              },
+              body: JSON.stringify({
+                customer_name: customerName,
+                phone,
+                quote: quoteDetails,
+                total_dop: costs.total,
+                total_usd: usdReady ? Number((costs.total / CONFIG.dopPerUsd).toFixed(2)) : null,
+                source: "chatbot"
+              })
+            });
+
+            if (!response.ok) {
+              const detail = await response.text();
+              console.error("Supabase cotizaciones error:", response.status, detail);
+              throw new Error("No se pudo guardar la solicitud.");
+            }
+
+            quoteAlreadySaved = true;
+            const oldClientPanel = document.getElementById("enmx-client-code-panel");
+            if (oldClientPanel) oldClientPanel.remove();
+
+            const waMessage = [
+              "Hola, acepté la cotización estimada de Enmx Security Cam.",
+              "Número de cliente: " + clientCode,
+              "Nombre: " + customerName,
+              "Teléfono: " + phone,
+              "Ciudad/sector: " + city,
+              "",
+              summaryText
+            ].join("\n");
+            const waUrl = "https://wa.me/18293281599?text=" + encodeURIComponent(waMessage);
+            const clientPanel = document.createElement("div");
+            clientPanel.id = "enmx-client-code-panel";
+            clientPanel.style.cssText = "margin:16px auto;padding:22px 18px;border:1px solid #d4af37;border-radius:10px;background:#17150f;text-align:center;max-width:620px;";
+            clientPanel.innerHTML = `
+              <p style="margin:0 0 8px;color:#c9c2b0;">¡COTIZACIÓN ACEPTADA Y GUARDADA!</p>
+              <h3 style="color:#f2d99b;margin:0 0 10px;">Tu cotización</h3>
+              <div style="text-align:left;padding:12px;border:1px solid #343027;border-radius:9px;margin-bottom:14px;">
+                <p style="margin:4px 0;"><strong>Cliente:</strong> ${escapeHTML(customerName)}</p>
+                <p style="margin:4px 0;"><strong>Teléfono:</strong> ${escapeHTML(phone)}</p>
+                <p style="margin:4px 0;"><strong>Ubicación:</strong> ${escapeHTML(city)}</p>
+                <p style="margin:4px 0;"><strong>Sistema:</strong> ${escapeHTML(cameraNames[state.type])} · ${state.quantity} cámara(s)</p>
+                <div class="totals">${rows}<div class="total-line final"><span>Total estimado RD$</span><strong>${formatDOP(costs.total)}</strong></div>${usdLine}</div>
+              </div>
+              <p style="margin:0 0 6px;color:#c9c2b0;">TU NÚMERO DE CLIENTE</p>
+              <p style="font-size:1.6rem;font-weight:900;letter-spacing:1px;color:#f2d99b;margin:0 0 14px;">${clientCode}</p>
+              <p style="color:#c9c2b0;font-size:.88rem;">Pulsa WhatsApp para enviar el número de cliente junto con el resumen y los precios de tu cotización.</p>
+              <a class="btn" href="${waUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;margin:4px;">Enviar número y cotización por WhatsApp</a>
+              <button type="button" class="btn secondary" id="enmx-new-quote" style="display:inline-block;margin:4px;">Hacer otra cotización</button>
+            `;
+            quoteForm.classList.add("hidden");
+            reviewPanel.replaceWith(clientPanel);
+            reviewPanel = null;
+            document.getElementById("enmx-new-quote").addEventListener("click", startChat);
+            summary.classList.remove("hidden");
+            clientPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+          } catch (error) {
+            reviewFeedback.textContent = "No se pudo guardar la cotización. Comprueba tu conexión e inténtalo otra vez.";
+            reviewFeedback.style.color = "#ff8585";
+            acceptButton.disabled = false;
+            acceptButton.textContent = "Reintentar guardar cotización";
+          }
+        });
+
+        reviewPanel.scrollIntoView({behavior:"smooth",block:"center"});
       });
 
       addBubble("¡Gracias por contactar a Enmx Security Cam! Revisa el estimado y envía tus datos para guardar la solicitud.");

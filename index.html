@@ -895,114 +895,22 @@
   </script>
 
 <!-- CONTACTO ENMX SECURITY CAM -->
-<section id="contacto" style="background:#101010;color:#fff;padding:50px 20px;font-family:Arial,sans-serif;">
+<section id="contacto" style="background:#101010;color:#fff;padding:50px 20px;font-family:Arial,sans-serif;text-align:center;">
   <div style="max-width:850px;margin:auto;">
     <p style="color:#d4af37;letter-spacing:3px;font-weight:bold;">ENMX SECURITY CAM</p>
-    <h2 style="font-size:32px;margin-bottom:10px;">Contáctanos</h2>
+    <h2 style="font-size:32px;margin-bottom:10px;">¿Necesitas instalar cámaras?</h2>
     <p style="color:#ccc;line-height:1.7;">
-      ¿Necesitas instalar cámaras de seguridad? Envíanos tus datos y
-      cuéntanos qué necesitas. Ofrecemos servicios en varias ciudades
-      de República Dominicana; consulta la disponibilidad en tu zona.
+      Escríbenos directamente por WhatsApp para consultar precios y disponibilidad.
     </p>
-
-    <div style="border:1px solid #d4af37;padding:18px;border-radius:10px;margin:25px 0;">
-      <strong style="color:#d4af37;">Teléfono de la empresa</strong>
-      <p style="margin-bottom:0;">8293281599.</p>
-    </div>
-
-    <h3 style="color:#d4af37;">Envíanos un mensaje</h3>
-
-    <form id="enmx-contact-form">
-      <label for="enmx-name">Nombre completo</label>
-      <input id="enmx-name" name="name" required minlength="2" maxlength="100"
-        autocomplete="name" placeholder="Tu nombre"
-        style="display:block;box-sizing:border-box;width:100%;padding:13px;margin:8px 0 18px;background:#1b1b1b;color:white;border:1px solid #444;border-radius:6px;">
-
-      <label for="enmx-phone">Teléfono</label>
-      <input id="enmx-phone" name="phone" type="tel" required minlength="7" maxlength="30"
-        autocomplete="tel" placeholder="Tu número de contacto"
-        style="display:block;box-sizing:border-box;width:100%;padding:13px;margin:8px 0 18px;background:#1b1b1b;color:white;border:1px solid #444;border-radius:6px;">
-
-      <label for="enmx-city">Ciudad</label>
-      <input id="enmx-city" name="city" required minlength="2" maxlength="100"
-        autocomplete="address-level2" placeholder="¿En qué ciudad necesitas el servicio?"
-        style="display:block;box-sizing:border-box;width:100%;padding:13px;margin:8px 0 18px;background:#1b1b1b;color:white;border:1px solid #444;border-radius:6px;">
-
-      <label for="enmx-message">¿En qué podemos ayudarte?</label>
-      <textarea id="enmx-message" name="message" required minlength="3" maxlength="2000"
-        rows="5" placeholder="Cuéntanos qué tipo de instalación necesitas..."
-        style="display:block;box-sizing:border-box;width:100%;padding:13px;margin:8px 0 18px;background:#1b1b1b;color:white;border:1px solid #444;border-radius:6px;resize:vertical;"></textarea>
-
-      <button id="enmx-submit" type="submit"
-        style="background:#d4af37;color:#111;font-weight:bold;padding:14px 22px;border:0;border-radius:6px;cursor:pointer;">
-        Enviar mensaje
-      </button>
-
-      <p id="enmx-feedback" role="status" aria-live="polite" style="margin-top:16px;"></p>
-    </form>
+    <p style="font-size:24px;font-weight:bold;margin:24px 0;">
+      <a href="https://wa.me/18293281599" target="_blank" rel="noopener noreferrer" style="color:#d4af37;text-decoration:none;">829-328-1599</a>
+    </p>
+    <a href="https://wa.me/18293281599" target="_blank" rel="noopener noreferrer"
+      style="display:inline-block;background:#d4af37;color:#111;font-weight:bold;padding:14px 22px;border-radius:6px;text-decoration:none;">
+      Escríbeme por WhatsApp
+    </a>
   </div>
 </section>
-
-<script>
-(() => {
-  const SUPABASE_URL = "https://tedtxusrtytqnjxloqim.supabase.co";
-  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_HGsE9OPOuPS7iGbC4qUoeQ_FGTfGIrT";
-
-  const form = document.getElementById("enmx-contact-form");
-  const button = document.getElementById("enmx-submit");
-  const feedback = document.getElementById("enmx-feedback");
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const customer = {
-      customer_name: document.getElementById("enmx-name").value.trim(),
-      phone: document.getElementById("enmx-phone").value.trim(),
-      city: document.getElementById("enmx-city").value.trim(),
-      message: document.getElementById("enmx-message").value.trim()
-    };
-
-    if (Object.values(customer).some(value => !value)) {
-      feedback.textContent = "Completa todos los campos.";
-      return;
-    }
-
-    button.disabled = true;
-    button.textContent = "Enviando...";
-    feedback.textContent = "";
-
-    try {
-      const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/contact_messages`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_PUBLISHABLE_KEY,
-            "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-            "Prefer": "return=minimal"
-          },
-          body: JSON.stringify(customer)
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("No se pudo guardar el mensaje.");
-      }
-
-      form.reset();
-      feedback.textContent = "¡Mensaje enviado! Gracias por contactar con Enmx Security Cam.";
-      feedback.style.color = "#d4af37";
-    } catch (error) {
-      feedback.textContent = "No pudimos enviar tu mensaje. Inténtalo de nuevo más tarde.";
-      feedback.style.color = "#ff8585";
-    } finally {
-      button.disabled = false;
-      button.textContent = "Enviar mensaje";
-    }
-  });
-})();
-</script>
 <!-- FIN CONTACTO ENMX SECURITY CAM -->
 </body>
 </html>

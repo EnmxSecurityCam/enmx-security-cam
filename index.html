@@ -763,7 +763,20 @@
           <button type="button" class="btn" id="copyQuote">Copiar resumen</button>
           <button type="button" class="btn secondary" id="restart">Nueva cotización</button>
         </div>
-        <p class="hint">Esta versión funciona localmente en el navegador. No envía los datos a la empresa ni los guarda en un servidor.</p>
+        <div class="notice" style="margin-top:18px;">
+          <strong>Último paso: envía tu solicitud</strong><br>
+          Confirma tus datos de contacto para guardar esta cotización y que Enmx Security Cam pueda revisarla.
+        </div>
+        <form id="enmx-quote-submit-form" style="display:grid;gap:12px;margin-top:14px;">
+          <label for="enmx-quote-name">Nombre completo</label>
+          <input id="enmx-quote-name" name="customer_name" required minlength="2" maxlength="100" autocomplete="name" value="${escapeHTML(state.name)}" placeholder="Tu nombre completo" style="box-sizing:border-box;width:100%;padding:12px;background:#171717;color:#fff;border:1px solid #555;border-radius:6px;">
+          <label for="enmx-quote-phone">Teléfono de contacto</label>
+          <input id="enmx-quote-phone" name="phone" type="tel" required minlength="7" maxlength="30" autocomplete="tel" placeholder="Ej. 8091234567" style="box-sizing:border-box;width:100%;padding:12px;background:#171717;color:#fff;border:1px solid #555;border-radius:6px;">
+          <label for="enmx-quote-city">Ciudad o sector de instalación</label>
+          <input id="enmx-quote-city" name="city" required minlength="2" maxlength="100" autocomplete="address-level2" value="${escapeHTML(state.location)}" placeholder="Ciudad o sector" style="box-sizing:border-box;width:100%;padding:12px;background:#171717;color:#fff;border:1px solid #555;border-radius:6px;">
+          <button type="submit" class="btn" id="enmx-quote-send">Enviar cotización</button>
+          <p id="enmx-quote-feedback" class="hint" role="status" aria-live="polite"></p>
+        </form>
       `;
       summary.classList.remove("hidden");
       chat.appendChild(summary);
@@ -789,7 +802,92 @@
       });
 
       document.getElementById("restart").addEventListener("click", startChat);
-      addBubble("¡Gracias por contactar a Enmx Security Cam! Ya tienes una referencia inicial. Revisa el resumen y confirma los precios y las condiciones antes de cerrar el trabajo.");
+
+      const quoteForm = document.getElementById("enmx-quote-submit-form");
+      const quoteSendButton = document.getElementById("enmx-quote-send");
+      const quoteFeedback = document.getElementById("enmx-quote-feedback");
+
+      quoteForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!quoteForm.reportValidity()) return;
+
+        const customerName = document.getElementById("enmx-quote-name").value.trim();
+        const phone = document.getElementById("enmx-quote-phone").value.trim();
+        const city = document.getElementById("enmx-quote-city").value.trim();
+
+        if (customerName.length < 2 || phone.length < 7 || city.length < 2) {
+          quoteFeedback.textContent = "Revisa el nombre, teléfono y ciudad antes de enviar.";
+          quoteFeedback.style.color = "#ff8585";
+          return;
+        }
+
+        quoteSendButton.disabled = true;
+        quoteSendButton.textContent = "Enviando cotización...";
+        quoteFeedback.textContent = "";
+
+        const quoteDetails = {
+          customer_name: customerName,
+          phone,
+          city,
+          type: state.type,
+          camera_type: cameraNames[state.type],
+          quantity: state.quantity,
+          property: propertyNames[state.property],
+          quote_type: state.quoteType,
+          wiring: ({easy:"Fácil / listo", normal:"Normal", difficult:"Difícil", unknown:"Por evaluar"}[state.wiring]),
+          equipment_status: ({have:"Tiene equipos", some:"Tiene algunos equipos", none:"Necesita comprar todo"}[state.equipmentStatus]),
+          equipment_cost_per_camera_dop: state.equipmentCostPerCameraDOP,
+          materials_cost_dop: state.materialsCostDOP,
+          recorder_setup: state.recorder,
+          mobile_setup: state.mobile,
+          notes: state.notes || "",
+          cost_breakdown_dop: costs,
+          exchange_rate_dop_per_usd: usdReady ? CONFIG.dopPerUsd : null,
+          estimated_total_dop: costs.total,
+          estimated_total_usd: usdReady ? Number((costs.total / CONFIG.dopPerUsd).toFixed(2)) : null,
+          estimate_notice: "Estimado preliminar sujeto a inspección y confirmación."
+        };
+
+        const supabaseUrl = "https://tedtxusrtytqnjxloqim.supabase.co";
+        const supabasePublishableKey = "sb_publishable_HGsE9OPOuPS7iGbC4qUoeQ_FGTfGIrT";
+
+        try {
+          const response = await fetch(`${supabaseUrl}/rest/v1/cotizaciones`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabasePublishableKey,
+              "Authorization": `Bearer ${supabasePublishableKey}`,
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({
+              customer_name: customerName,
+              phone,
+              quote: quoteDetails,
+              total_dop: costs.total,
+              total_usd: usdReady ? Number((costs.total / CONFIG.dopPerUsd).toFixed(2)) : null,
+              source: "chatbot"
+            })
+          });
+
+          if (!response.ok) {
+            const detail = await response.text();
+            console.error("Supabase cotizaciones error:", response.status, detail);
+            throw new Error("No se pudo guardar la solicitud.");
+          }
+
+          quoteFeedback.textContent = "¡Cotización enviada y guardada! Enmx Security Cam ya recibió tu solicitud.";
+          quoteFeedback.style.color = "#d4af37";
+          quoteSendButton.textContent = "Cotización enviada";
+        } catch (error) {
+          quoteFeedback.textContent = "No se pudo guardar la cotización. Comprueba tu conexión e inténtalo otra vez.";
+          quoteFeedback.style.color = "#ff8585";
+          quoteSendButton.disabled = false;
+          quoteSendButton.textContent = "Reintentar envío";
+        }
+      });
+
+      addBubble("¡Gracias por contactar a Enmx Security Cam! Revisa el estimado y envía tus datos para guardar la solicitud.");
     }
 
     document.getElementById("year").textContent = new Date().getFullYear();

@@ -903,9 +903,11 @@
             <p style="margin:0 0 6px;color:#c9c2b0;">TU NÚMERO DE CLIENTE</p>
             <p style="font-size:1.6rem;font-weight:900;letter-spacing:1px;color:#f2d99b;margin:0 0 18px;">${clientCode}</p>
             <a class="btn" href="${waUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;margin:4px;">Mandar al WhatsApp</a>
+            <button type="button" class="btn secondary" id="enmx-new-quote" style="display:inline-block;margin:4px;">Hacer otra cotización</button>
           `;
           summary.innerHTML = "";
           summary.appendChild(clientPanel);
+          document.getElementById("enmx-new-quote").addEventListener("click", startChat);
           summary.classList.remove("hidden");
           summary.scrollIntoView({ behavior: "smooth", block: "center" });
           setTimeout(() => clientPanel.scrollIntoView({ behavior: "smooth", block: "center" }), 150);

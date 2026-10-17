@@ -7,7 +7,7 @@
 <title>Panel privado | ENMX Security Cam</title>
 <style>
 :root{color-scheme:dark;--bg:#090909;--panel:#151515;--line:#383126;--gold:#d7b568;--gold2:#f2d99b;--text:#f7f4ed;--muted:#aaa69b;--red:#ff9696;--green:#8ed6a1}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select{font:inherit}button{cursor:pointer}.wrap{width:min(1000px,94%);margin:auto}.top{padding:22px 0;border-bottom:1px solid var(--line)}.brand{font-weight:900;letter-spacing:1px;color:var(--gold2)}.sub{color:var(--muted);font-size:.9rem}.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:20px;margin:22px 0}.hidden{display:none!important}h1{font-size:clamp(1.6rem,5vw,2.3rem);line-height:1.15;margin:0 0 8px}h2{font-size:1.2rem;margin:0 0 14px}.field{display:grid;gap:6px;margin:12px 0}.field input,.field select,.search{width:100%;padding:12px;border:1px solid #554a36;border-radius:9px;background:#090909;color:var(--text)}.btn{border:1px solid var(--gold);border-radius:9px;background:var(--gold);color:#15120b;font-weight:800;padding:11px 15px}.btn.secondary{background:transparent;color:var(--gold2)}.btn:disabled{opacity:.55;cursor:wait}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}.message{margin-top:12px;color:var(--muted);overflow-wrap:anywhere}.error{color:var(--red)}.success{color:var(--green)}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}.stat{padding:13px;border:1px solid var(--line);border-radius:10px;background:#101010}.stat small{display:block;color:var(--muted)}.stat strong{font-size:1.3rem;color:var(--gold2)}.cards{display:grid;gap:12px}.client{border:1px solid var(--line);border-radius:12px;padding:15px;background:#101010}.client-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.code{color:var(--gold2);font-weight:900;letter-spacing:.5px}.meta{color:var(--muted);font-size:.9rem;overflow-wrap:anywhere}.details{margin:12px 0;padding-top:10px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.details span{display:block;color:var(--muted);font-size:.8rem}.details strong{overflow-wrap:anywhere}.status-select{max-width:100%;padding:9px;border:1px solid #554a36;border-radius:8px;background:#090909;color:var(--text)}.empty{padding:22px;text-align:center;color:var(--muted)}footer{padding:20px 0 35px;color:var(--muted);font-size:.85rem}@media(max-width:560px){.panel{padding:15px}.stats{grid-template-columns:1fr}.details{grid-template-columns:1fr}.btn{width:100%}.client-head{display:block}.client-head>*{margin:4px 0}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select{font:inherit}button{cursor:pointer}.wrap{width:min(1000px,94%);margin:auto}.top{padding:22px 0;border-bottom:1px solid var(--line)}.brand{font-weight:900;letter-spacing:1px;color:var(--gold2)}.sub{color:var(--muted);font-size:.9rem}.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:20px;margin:22px 0}.hidden{display:none!important}h1{font-size:clamp(1.6rem,5vw,2.3rem);line-height:1.15;margin:0 0 8px}h2{font-size:1.2rem;margin:0 0 14px}.field{display:grid;gap:6px;margin:12px 0}.field input,.field select,.search{width:100%;padding:12px;border:1px solid #554a36;border-radius:9px;background:#090909;color:var(--text)}.btn{border:1px solid var(--gold);border-radius:9px;background:var(--gold);color:#15120b;font-weight:800;padding:11px 15px}.btn.secondary{background:transparent;color:var(--gold2)}.btn:disabled{opacity:.55;cursor:wait}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}.message{margin-top:12px;color:var(--muted);overflow-wrap:anywhere}.error{color:var(--red)}.success{color:var(--green)}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}.stat{padding:13px;border:1px solid var(--line);border-radius:10px;background:#101010}.stat small{display:block;color:var(--muted)}.stat strong{font-size:1.3rem;color:var(--gold2)}.cards{display:grid;gap:12px}.client{border:1px solid var(--line);border-radius:12px;padding:15px;background:#101010}.client-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.code{color:var(--gold2);font-weight:900;letter-spacing:.5px}.meta{color:var(--muted);font-size:.9rem;overflow-wrap:anywhere}.details{margin:12px 0;padding-top:10px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.details span{display:block;color:var(--muted);font-size:.8rem}.details strong{overflow-wrap:anywhere}.status-select{max-width:100%;padding:9px;border:1px solid #554a36;border-radius:8px;background:#090909;color:var(--text)}.empty{padding:22px;text-align:center;color:var(--muted)}footer{padding:20px 0 35px;color:var(--muted);font-size:.85rem}@media(max-width:560px){.panel{padding:15px}.stats{grid-template-columns:1fr}.details{grid-template-columns:1fr}.btn{width:100%}.client-head{display:block}.client-head>*{margin:4px 0}}
 </style>
 </head>
 <body>
@@ -26,7 +26,7 @@
 <section id="dashboard" class="hidden">
 <div class="panel">
 <div class="row" style="justify-content:space-between"><div><h1>Mis cotizaciones</h1><div id="signed-in" class="sub"></div></div><button id="logout" class="btn secondary" type="button">Cerrar sesión</button></div>
-<div class="stats"><div class="stat"><small>Total de solicitudes</small><strong id="stat-total">—</strong></div><div class="stat"><small>Pendientes</small><strong id="stat-pending">—</strong></div><div class="stat"><small>Completadas</small><strong id="stat-done">—</strong></div></div>
+<div class="stats"><div class="stat"><small>Total de solicitudes</small><strong id="stat-total">—</strong></div><div class="stat"><small>Pendientes</small><strong id="stat-pending">—</strong></div><div class="stat"><small>En proceso</small><strong id="stat-progress">—</strong></div><div class="stat"><small>Completadas</small><strong id="stat-done">—</strong></div></div><div class="stat" style="margin-top:10px;border-color:var(--gold);"><small>Ganancias estimadas de trabajos completados (mano de obra)</small><strong id="stat-earnings">—</strong></div>
 <div class="row"><input id="search" class="search" type="search" placeholder="Buscar por código, nombre o teléfono" aria-label="Buscar cotizaciones"><button id="refresh" class="btn secondary" type="button">Actualizar</button></div>
 <div id="dashboard-message" class="message" role="status" aria-live="polite"></div>
 </div>
@@ -84,7 +84,11 @@
     });
     $("stat-total").textContent=records.length;
     $("stat-pending").textContent=records.filter(r=>!r.status||/pending|pendiente/i.test(r.status)).length;
-    $("stat-done").textContent=records.filter(r=>/completed|completad/i.test(r.status||"")).length;
+    $("stat-progress").textContent=records.filter(r=>/progress|proceso/i.test(r.status||"")).length;
+    const completed=records.filter(r=>/completed|completad/i.test(r.status||""));
+    $("stat-done").textContent=completed.length;
+    const earnings=completed.reduce((sum,r)=>{const q=r.quote&&typeof r.quote==="object"?r.quote:{};const breakdown=q.cost_breakdown_dop&&typeof q.cost_breakdown_dop==="object"?q.cost_breakdown_dop:{};return sum+Number(breakdown.labor||0);},0);
+    $("stat-earnings").textContent=money(earnings);
     const container=$("clients");container.replaceChildren();
     if(!filtered.length){container.appendChild(make("div","panel empty",records.length?"No hay resultados para esa búsqueda.":"Todavía no hay cotizaciones guardadas."));return;}
     filtered.forEach(r=>{
@@ -107,12 +111,19 @@
         try{
           const code=q.client_code;
           if(!code) throw new Error("Esta cotización no tiene código de cliente; no se modificó.");
-          const filter=new URLSearchParams();filter.set("quote->>client_code","eq."+code);
+          const filter=new URLSearchParams();
+          if(r.id){filter.set("id","eq."+r.id);}else{filter.set("quote->>client_code","eq."+code);}
           await api("/rest/v1/cotizaciones?"+filter.toString(),{method:"PATCH",headers:{"Prefer":"return=minimal"},body:JSON.stringify({status:status.value})});
           r.status=status.value;message("dashboard-message","Estado actualizado correctamente.","success");render();
         }catch(e){message("dashboard-message",e.message,"error");save.disabled=false;}
       });
       right.append(status,document.createElement("br"),save);head.append(left,right);card.appendChild(head);
+      const currentStatus=status.value;
+      const guidance=make("div","notice");
+      guidance.style.cssText="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:9px;background:#17150f;color:var(--muted);";
+      const guidanceText={pending:"Siguiente paso: contacta al cliente, confirma la dirección, las necesidades y coordina una fecha de visita o instalación.",in_progress:"Trabajo en proceso: coordina la instalación, verifica los equipos y mantén al cliente informado del avance.",completed:"Trabajo completado: confirma que las cámaras funcionen, entrega las instrucciones al cliente y verifica el pago."};
+      guidance.textContent=guidanceText[currentStatus];
+      status.addEventListener("change",()=>{guidance.textContent=guidanceText[status.value];});
       const details=make("div","details");
       const pairs=[
         ["Teléfono",r.phone||q.phone||"—"],["Ubicación",q.city||q.location||"—"],
@@ -121,6 +132,7 @@
       ];
       pairs.forEach(([label,value])=>{const item=make("div","");item.appendChild(make("span","",label));item.appendChild(make("strong","",String(value)));details.appendChild(item);});
       card.appendChild(details);
+      card.appendChild(guidance);
       if(q.notes){card.appendChild(make("div","meta","Notas: "+q.notes));}
       container.appendChild(card);
     });
@@ -128,7 +140,7 @@
   async function loadRecords(){
     $("refresh").disabled=true;message("dashboard-message","Cargando cotizaciones…");
     try{
-      records=await api("/rest/v1/cotizaciones?select=created_at,customer_name,phone,quote,total_dop,total_usd,status,source&order=created_at.desc&limit=200");
+      records=await api("/rest/v1/cotizaciones?select=id,created_at,customer_name,phone,quote,total_dop,total_usd,status,source&order=created_at.desc&limit=200");
       if(!Array.isArray(records)) records=[];
       render();message("dashboard-message","Se cargaron "+records.length+" cotización(es).","success");
     }catch(e){message("dashboard-message",e.message,"error");}

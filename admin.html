@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090909">
+<title>Panel privado | ENMX Security Cam</title>
+<style>
+:root{color-scheme:dark;--bg:#090909;--panel:#151515;--line:#383126;--gold:#d7b568;--gold2:#f2d99b;--text:#f7f4ed;--muted:#aaa69b;--red:#ff9696;--green:#8ed6a1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select{font:inherit}button{cursor:pointer}.wrap{width:min(1000px,94%);margin:auto}.top{padding:22px 0;border-bottom:1px solid var(--line)}.brand{font-weight:900;letter-spacing:1px;color:var(--gold2)}.sub{color:var(--muted);font-size:.9rem}.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:20px;margin:22px 0}.hidden{display:none!important}h1{font-size:clamp(1.6rem,5vw,2.3rem);line-height:1.15;margin:0 0 8px}h2{font-size:1.2rem;margin:0 0 14px}.field{display:grid;gap:6px;margin:12px 0}.field input,.field select,.search{width:100%;padding:12px;border:1px solid #554a36;border-radius:9px;background:#090909;color:var(--text)}.btn{border:1px solid var(--gold);border-radius:9px;background:var(--gold);color:#15120b;font-weight:800;padding:11px 15px}.btn.secondary{background:transparent;color:var(--gold2)}.btn:disabled{opacity:.55;cursor:wait}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}.message{margin-top:12px;color:var(--muted);overflow-wrap:anywhere}.error{color:var(--red)}.success{color:var(--green)}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}.stat{padding:13px;border:1px solid var(--line);border-radius:10px;background:#101010}.stat small{display:block;color:var(--muted)}.stat strong{font-size:1.3rem;color:var(--gold2)}.cards{display:grid;gap:12px}.client{border:1px solid var(--line);border-radius:12px;padding:15px;background:#101010}.client-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.code{color:var(--gold2);font-weight:900;letter-spacing:.5px}.meta{color:var(--muted);font-size:.9rem;overflow-wrap:anywhere}.details{margin:12px 0;padding-top:10px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.details span{display:block;color:var(--muted);font-size:.8rem}.details strong{overflow-wrap:anywhere}.status-select{max-width:100%;padding:9px;border:1px solid #554a36;border-radius:8px;background:#090909;color:var(--text)}.empty{padding:22px;text-align:center;color:var(--muted)}footer{padding:20px 0 35px;color:var(--muted);font-size:.85rem}@media(max-width:560px){.panel{padding:15px}.stats{grid-template-columns:1fr}.details{grid-template-columns:1fr}.btn{width:100%}.client-head{display:block}.client-head>*{margin:4px 0}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><div class="brand">ENMX SECURITY CAM</div><div class="sub">Panel privado de administración</div></div></header>
+<main class="wrap">
+<section id="login-panel" class="panel">
+<h1>Acceso de administrador</h1>
+<p class="sub">Inicia sesión con el usuario que autorizaste en Supabase.</p>
+<form id="login-form">
+<label class="field">Correo electrónico<input id="email" type="email" autocomplete="username" required maxlength="254"></label>
+<label class="field">Contraseña<input id="password" type="password" autocomplete="current-password" required></label>
+<button class="btn" id="login-button" type="submit">Entrar al panel</button>
+<div id="login-message" class="message" role="status" aria-live="polite"></div>
+</form>
+</section>
+<section id="dashboard" class="hidden">
+<div class="panel">
+<div class="row" style="justify-content:space-between"><div><h1>Mis cotizaciones</h1><div id="signed-in" class="sub"></div></div><button id="logout" class="btn secondary" type="button">Cerrar sesión</button></div>
+<div class="stats"><div class="stat"><small>Total de solicitudes</small><strong id="stat-total">—</strong></div><div class="stat"><small>Pendientes</small><strong id="stat-pending">—</strong></div><div class="stat"><small>Completadas</small><strong id="stat-done">—</strong></div></div>
+<div class="row"><input id="search" class="search" type="search" placeholder="Buscar por código, nombre o teléfono" aria-label="Buscar cotizaciones"><button id="refresh" class="btn secondary" type="button">Actualizar</button></div>
+<div id="dashboard-message" class="message" role="status" aria-live="polite"></div>
+</div>
+<div id="clients" class="cards"></div>
+</section>
+</main>
+<footer class="wrap">Mantén tu contraseña privada. El acceso a los registros también está protegido por las políticas de Supabase.</footer>
+<script>
+(() => {
+  const SUPABASE_URL = "https://tedtxusrtytqnjxloqim.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_HGsE9OPOuPS7iGbC4qUoeQ_FGTfGIrT";
+  const ADMIN_UID = "bf585a90-413c-4330-9aef-12a702fd148d";
+  const SESSION_KEY = "enmx_admin_session";
+  const $ = id => document.getElementById(id);
+  let records = [];
+  let session = null;
+  const money = value => value == null ? "—" : new Intl.NumberFormat("es-DO",{style:"currency",currency:"DOP",maximumFractionDigits:0}).format(Number(value));
+  const dateText = value => { if(!value) return "—"; const d=new Date(value); return Number.isNaN(d.getTime())?"—":d.toLocaleString("es-DO"); };
+  function message(id,text,kind=""){ $(id).textContent=text; $(id).className="message "+kind; }
+  function setLoggedIn(user){
+    $("login-panel").classList.add("hidden"); $("dashboard").classList.remove("hidden");
+    $("signed-in").textContent="Sesión iniciada: "+(user.email||"administrador");
+  }
+  function showLogin(){
+    $("dashboard").classList.add("hidden"); $("login-panel").classList.remove("hidden");
+    $("password").value="";
+  }
+  function saveSession(value){ session=value; try{sessionStorage.setItem(SESSION_KEY,JSON.stringify(value));}catch{} }
+  function clearSession(){session=null;try{sessionStorage.removeItem(SESSION_KEY);}catch{}records=[];showLogin();}
+  async function api(path, options={}){
+    if(!session?.access_token) throw new Error("La sesión expiró. Vuelve a iniciar sesión.");
+    const response=await fetch(SUPABASE_URL+path,{...options,headers:{
+      apikey:SUPABASE_KEY,Authorization:"Bearer "+session.access_token,
+      "Content-Type":"application/json",...(options.headers||{})
+    }});
+    if(response.status===401){clearSession();throw new Error("La sesión expiró. Vuelve a iniciar sesión.");}
+    if(!response.ok){const body=await response.text();console.error("Supabase API",response.status,body);throw new Error("Supabase rechazó la solicitud ("+response.status+"). Verifica las políticas y vuelve a intentar.");}
+    if(response.status===204) return null;
+    const type=response.headers.get("content-type")||"";
+    return type.includes("application/json")?response.json():null;
+  }
+  async function login(email,password){
+    const response=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"Content-Type":"application/json",apikey:SUPABASE_KEY},body:JSON.stringify({email,password})});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(data.msg||data.message||"No se pudo iniciar sesión. Revisa el correo y la contraseña.");
+    if(!data.user||data.user.id!==ADMIN_UID){throw new Error("Esta cuenta no está autorizada como administrador.");}
+    saveSession(data);setLoggedIn(data.user);await loadRecords();
+  }
+  function make(tag,cls,txt){const el=document.createElement(tag);if(cls)el.className=cls;if(txt!==undefined)el.textContent=txt;return el;}
+  function render(){
+    const term=$("search").value.trim().toLowerCase();
+    const filtered=records.filter(r=>{
+      const q=r.quote&&typeof r.quote==="object"?r.quote:{};
+      return [q.client_code,r.customer_name,r.phone,q.city,q.location].some(v=>String(v||"").toLowerCase().includes(term));
+    });
+    $("stat-total").textContent=records.length;
+    $("stat-pending").textContent=records.filter(r=>!r.status||/pending|pendiente/i.test(r.status)).length;
+    $("stat-done").textContent=records.filter(r=>/completed|completad/i.test(r.status||"")).length;
+    const container=$("clients");container.replaceChildren();
+    if(!filtered.length){container.appendChild(make("div","panel empty",records.length?"No hay resultados para esa búsqueda.":"Todavía no hay cotizaciones guardadas."));return;}
+    filtered.forEach(r=>{
+      const q=r.quote&&typeof r.quote==="object"?r.quote:{};
+      const card=make("article","client");
+      const head=make("div","client-head");
+      const left=make("div");
+      left.appendChild(make("div","code",q.client_code||"Sin código"));
+      left.appendChild(make("h2","",r.customer_name||q.customer_name||"Cliente sin nombre"));
+      left.appendChild(make("div","meta","Recibida: "+dateText(r.created_at)));
+      const right=make("div");
+      const status=make("select","status-select");
+      status.setAttribute("aria-label","Estado de la cotización "+(q.client_code||""));
+      [["pending","Pendiente"],["in_progress","En proceso"],["completed","Completada"]].forEach(([v,label])=>{const o=make("option","",label);o.value=v;status.appendChild(o);});
+      const raw=String(r.status||"pending").toLowerCase();
+      status.value=/complete|completad/.test(raw)?"completed":/progress|proceso/.test(raw)?"in_progress":"pending";
+      const save=make("button","btn secondary","Guardar estado");save.type="button";save.style.marginTop="8px";
+      save.addEventListener("click",async()=>{
+        save.disabled=true;message("dashboard-message","Guardando estado…");
+        try{
+          const code=q.client_code;
+          if(!code) throw new Error("Esta cotización no tiene código de cliente; no se modificó.");
+          const filter=new URLSearchParams();filter.set("quote->>client_code","eq."+code);
+          await api("/rest/v1/cotizaciones?"+filter.toString(),{method:"PATCH",headers:{"Prefer":"return=minimal"},body:JSON.stringify({status:status.value})});
+          r.status=status.value;message("dashboard-message","Estado actualizado correctamente.","success");render();
+        }catch(e){message("dashboard-message",e.message,"error");save.disabled=false;}
+      });
+      right.append(status,document.createElement("br"),save);head.append(left,right);card.appendChild(head);
+      const details=make("div","details");
+      const pairs=[
+        ["Teléfono",r.phone||q.phone||"—"],["Ubicación",q.city||q.location||"—"],
+        ["Total estimado",money(r.total_dop)],["Sistema",q.camera_type||q.type||"—"],
+        ["Cantidad de cámaras",q.quantity==null?"—":String(q.quantity)],["Tipo de servicio",q.quote_type==="labor"?"Solo mano de obra":q.quote_type==="full"?"Equipos + materiales + instalación":"—"]
+      ];
+      pairs.forEach(([label,value])=>{const item=make("div","");item.appendChild(make("span","",label));item.appendChild(make("strong","",String(value)));details.appendChild(item);});
+      card.appendChild(details);
+      if(q.notes){card.appendChild(make("div","meta","Notas: "+q.notes));}
+      container.appendChild(card);
+    });
+  }
+  async function loadRecords(){
+    $("refresh").disabled=true;message("dashboard-message","Cargando cotizaciones…");
+    try{
+      records=await api("/rest/v1/cotizaciones?select=created_at,customer_name,phone,quote,total_dop,total_usd,status,source&order=created_at.desc&limit=200");
+      if(!Array.isArray(records)) records=[];
+      render();message("dashboard-message","Se cargaron "+records.length+" cotización(es).","success");
+    }catch(e){message("dashboard-message",e.message,"error");}
+    finally{$("refresh").disabled=false;}
+  }
+  $("login-form").addEventListener("submit",async e=>{
+    e.preventDefault();$("login-button").disabled=true;message("login-message","Verificando acceso…");
+    try{await login($("email").value.trim(),$("password").value);}
+    catch(err){message("login-message",err.message,"error");}
+    finally{$("login-button").disabled=false;$("password").value="";}
+  });
+  $("logout").addEventListener("click",clearSession);
+  $("refresh").addEventListener("click",loadRecords);
+  $("search").addEventListener("input",render);
+  try{
+    const saved=sessionStorage.getItem(SESSION_KEY);
+    if(saved){const parsed=JSON.parse(saved);if(parsed.user?.id===ADMIN_UID&&parsed.access_token){session=parsed;setLoggedIn(parsed.user);loadRecords();}else clearSession();}
+  }catch{clearSession();}
+})();
+</script>
+</body>
+</html>

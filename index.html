@@ -752,8 +752,7 @@
       const costs = calculate();
       const usdReady = !CONFIG.requireVerifiedExchangeRate &&
         Number.isFinite(CONFIG.dopPerUsd) && CONFIG.dopPerUsd > 0;
-      const fullNeedsCosts = state.quoteType === "full" &&
-        state.equipmentCostPerCameraDOP === 0;
+      const fullNeedsCosts = false;
       const totalLines = [
         ["Instalación y cableado por cámaras", formatDOP(costs.base)],
         ["Configuración del grabador DVR/NVR", formatDOP(costs.recorder)],
@@ -889,7 +888,7 @@
         reviewPanel.id = "enmx-quote-review";
         reviewPanel.style.cssText = "margin-top:18px;padding:18px;border:1px solid #d4af37;border-radius:10px;background:#17150f;";
         reviewPanel.innerHTML = `
-          <h3 style="margin:0 0 8px;color:#f2d99b;">Revisa tu cotización antes de aceptarla</h3>
+          <h3 style="margin:0 0 8px;color:#f2d99b;">${state.quoteType === "full" ? "Confirma tu solicitud de cotización" : "Revisa tu cotización antes de aceptarla"}</h3>
           <p style="margin:0 0 12px;color:#c9c2b0;">Comprueba tus datos y los importes. Todavía no se enviará la solicitud hasta que aceptes.</p>
           <div class="summary-grid">
             <div class="summary-item"><small>Nombre</small><strong>${escapeHTML(customerName)}</strong></div>
@@ -903,7 +902,7 @@
           <div class="notice">${fullNeedsCosts ? "Atención: el costo de equipos se dejó en RD$0 porque no se introdujo un precio. El total no incluye equipos cuyo costo esté pendiente. " : ""}Este es un estimado preliminar sujeto a inspección y confirmación. Revisa los precios antes de aceptar.</div>
           <label style="display:flex;align-items:flex-start;gap:10px;margin:14px 0;color:#f7f4ed;">
             <input id="enmx-accept-estimate" type="checkbox" style="margin-top:6px;accent-color:#d7b568;width:18px;height:18px;flex-shrink:0;">
-            <span>Acepto que esta es una cotización estimada y autorizo enviar mis datos y la solicitud a ENMX Security Cam para darle seguimiento.</span>
+            <span>${state.quoteType === "full" ? "Autorizo enviar mis datos y esta solicitud a ENMX Security Cam para preparar y enviarme una cotización personalizada por WhatsApp." : "Acepto que esta es una cotización estimada y autorizo enviar mis datos y la solicitud a ENMX Security Cam para darle seguimiento."}</span>
           </label>
           <div class="options">
             <button type="button" class="btn" id="enmx-accept-send">Aceptar cotización y generar número de cliente</button>
@@ -1037,7 +1036,7 @@
         reviewPanel.scrollIntoView({behavior:"smooth",block:"center"});
       });
 
-      addBubble("¡Gracias por contactar a Enmx Security Cam! Revisa el estimado y envía tus datos para guardar la solicitud.");
+      addBubble(state.quoteType === "full" ? "Gracias por contactar a ENMX Security Cam. Envía tus datos y prepararemos tu cotización personalizada." : "¡Gracias por contactar a Enmx Security Cam! Revisa el estimado y envía tus datos para guardar la solicitud.");
     }
 
     document.getElementById("year").textContent = new Date().getFullYear();

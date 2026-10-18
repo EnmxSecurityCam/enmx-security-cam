@@ -126,7 +126,7 @@
     $("stat-progress").textContent=records.filter(r=>/progress|proceso/i.test(r.status||"")).length;
     const completed=records.filter(r=>/completed|completad/i.test(r.status||""));
     $("stat-done").textContent=completed.length;
-    const earnings=completed.reduce((sum,r)=>{const q=r.quote&&typeof r.quote==="object"?r.quote:{};const breakdown=q.cost_breakdown_dop&&typeof q.cost_breakdown_dop==="object"?q.cost_breakdown_dop:{};return sum+Number(breakdown.labor||0);},0);
+    const earnings=completed.reduce((sum,r)=>{const q=r.quote&&typeof r.quote==="object"?r.quote:{};const breakdown=q.cost_breakdown_dop&&typeof q.cost_breakdown_dop==="object"?q.cost_breakdown_dop:{};const adminQuote=q.admin_quote&&typeof q.admin_quote==="object"?q.admin_quote:{};return sum+Number(adminQuote.labor ?? breakdown.labor ?? 0);},0);
     $("stat-earnings").textContent=money(earnings);
     const container=$("clients");container.replaceChildren();
     if(!filtered.length){const hasInView=viewRecords.length>0;container.appendChild(make("div","panel empty",hasInView?"No hay resultados para esa búsqueda.":currentView==="pending"?"No hay solicitudes pendientes.":currentView==="active"?"No hay trabajos activos en proceso.":"Todavía no hay trabajos completados."));return;}

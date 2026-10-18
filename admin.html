@@ -211,16 +211,16 @@
     const text=$("repair-description").value.toLowerCase();
     const qty=Math.max(1,Number($("repair-quantity").value||1));
     const level=$("repair-level").value;
-    let unit=500;
-    if(/repetidor|repetidores|configuraci[oó]n.*dvr|configurar.*dvr|nvr/.test(text)) unit=/dvr|nvr/.test(text)?1300:500;
+    let unit=550;
+    if(/repetidor|repetidores|configuraci[oó]n.*dvr|configurar.*dvr|nvr/.test(text)) unit=/dvr|nvr/.test(text)?1400:550;
     else if(/c[aá]mara|camara/.test(text) && /instal|cambi|reemplaz/.test(text)){
-      unit=/ip/.test(text)?1000:/wifi|wi-fi/.test(text)?500:800;
-    } else if(/cable|cableado|conector|empalme/.test(text)) unit=500;
-    else if(/m[oó]vil|celular|tel[eé]fono/.test(text)) unit=500;
-    else if(/repar|diagn[oó]st|revisi[oó]n|visita/.test(text)) unit=500;
+      unit=/ip/.test(text)?1050:/wifi|wi-fi/.test(text)?550:850;
+    } else if(/cable|cableado|conector|empalme/.test(text)) unit=550;
+    else if(/m[oó]vil|celular|tel[eé]fono/.test(text)) unit=550;
+    else if(/repar|diagn[oó]st|revisi[oó]n|visita/.test(text)) unit=550;
     let labor=unit*qty;
-    if(level==="second_floor" || /segundo piso|2do piso|segundo nivel/.test(text)) labor+=300*qty;
-    if(level==="difficult" || /dif[ií]cil|techo|tuber[ií]as|tuberias|altura|escalera/.test(text)) labor+=500*qty;
+    if(level==="second_floor" || /segundo piso|2do piso|segundo nivel/.test(text)) labor+=350*qty;
+    if(level==="difficult" || /dif[ií]cil|techo|tuber[ií]as|tuberias|altura|escalera/.test(text)) labor+=550*qty;
     return Math.max(0,labor);
   }
   function repairProfitPreview(){

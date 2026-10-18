@@ -375,9 +375,9 @@
     const CONFIG = {
       // Precio por cámara, incluyendo cableado de dificultad moderada (RD$).
       laborPerCameraDOP: {
-        cctv: 800,
-        wifi: 500,
-        ip: 1000
+        cctv: 850,
+        wifi: 550,
+        ip: 1050
       },
 
       // El precio por cámara ya contempla el cableado estimado.
@@ -385,8 +385,8 @@
       difficultWiringExtraPerCameraDOP: 0,
 
       // Configuración de DVR/NVR y visualización desde el móvil (RD$).
-      recorderSetupDOP: 1300,
-      mobileSetupDOP: 500,
+      recorderSetupDOP: 1400,
+      mobileSetupDOP: 550,
 
       // Cambia esta tasa por la que decidas utilizar.
       // Es solo un valor inicial de ejemplo, NO una tasa verificada.
@@ -668,7 +668,10 @@
       ], value => {
         state.equipmentStatus = value;
         if (state.quoteType === "full") {
-          askEquipmentCosts();
+          // ENMX preparará los precios de equipos y materiales desde el panel de administración.
+          state.equipmentCostPerCameraDOP = 0;
+          state.materialsCostDOP = 0;
+          askMobile();
         } else {
           askMobile();
         }

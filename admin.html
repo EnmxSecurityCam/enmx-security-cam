@@ -46,10 +46,14 @@
     <div class="field"><label for="repair-name">Nombre del cliente *</label><input id="repair-name" required maxlength="120"></div>
     <div class="field"><label for="repair-phone">Teléfono</label><input id="repair-phone" type="tel" maxlength="40"></div>
     <div class="field"><label for="repair-location">Ubicación del trabajo</label><input id="repair-location" maxlength="180"></div>
-    <div class="field"><label for="repair-description">Trabajo realizado o por realizar *</label><input id="repair-description" required maxlength="500" placeholder="Ej.: cambio de cámara, reparación de cable, revisión de DVR"></div>
+    <div class="field"><label for="repair-description">Trabajo realizado o por realizar *</label><input id="repair-description" required maxlength="500" placeholder="Ej.: cambio de cable en segundo piso, configurar repetidores Wi-Fi"></div>
+    <div class="field"><label for="repair-quantity">Cantidad de unidades/trabajos</label><input id="repair-quantity" type="number" min="1" max="100" step="1" value="1" required></div>
+    <div class="field"><label for="repair-level">Altura o dificultad</label><select id="repair-level"><option value="normal">Normal / fácil acceso</option><option value="second_floor">Segundo piso / escalera</option><option value="difficult">Difícil acceso / techo / tuberías</option></select></div>
     <div class="field"><label for="repair-materials">Costo de piezas/materiales (RD$) *</label><input id="repair-materials" type="number" min="0" step="0.01" value="0" required></div>
-    <div class="field"><label for="repair-charge">Total que cobrarás al cliente (RD$) *</label><input id="repair-charge" type="number" min="0" step="0.01" required></div>
-    <div class="stat"><small>Ganancia estimada (cobro menos materiales)</small><strong id="repair-profit-preview">RD$0</strong></div>
+    <div class="field"><label for="repair-charge">Total sugerido al cliente (RD$) *</label><input id="repair-charge" type="number" min="0" step="0.01" required></div>
+    <div class="stat"><small>Mano de obra sugerida</small><strong id="repair-labor-preview">RD$0</strong></div>
+    <div class="stat"><small>Ganancia estimada (total menos materiales)</small><strong id="repair-profit-preview">RD$0</strong></div>
+    <div class="field"><label for="repair-paid">Abono recibido (RD$)</label><input id="repair-paid" type="number" min="0" step="0.01" value="0" required></div>
     <div class="field"><label for="repair-status">Estado</label><select id="repair-status"><option value="Pendiente">Pendiente</option><option value="En proceso">En proceso</option><option value="Completada">Completada</option></select></div>
     <div class="field"><label for="repair-notes">Notas (opcional)</label><input id="repair-notes" maxlength="1000" placeholder="Marca/modelo, detalle del problema, pago recibido…"></div>
     <button class="btn" id="repair-save" type="submit">Guardar cotización de reparación</button>
@@ -176,9 +180,43 @@
 
   let repairRecords = [];
   const repairMoney = value => money(Number(value||0));
+  function estimateRepairLabor(){
+    const text=$("repair-description").value.toLowerCase();
+    const qty=Math.max(1,Number($("repair-quantity").value||1));
+    const level=$("repair-level").value;
+    let unit=500;
+    if(/repetidor|repetidores|configuraci[oó]n.*dvr|configurar.*dvr|nvr/.test(text)) unit=/dvr|nvr/.test(text)?1300:500;
+    else if(/c[aá]mara|camara/.test(text) && /instal|cambi|reemplaz/.test(text)){
+      unit=/ip/.test(text)?1000:/wifi|wi-fi/.test(text)?500:800;
+    } else if(/cable|cableado|conector|empalme/.test(text)) unit=500;
+    else if(/m[oó]vil|celular|tel[eé]fono/.test(text)) unit=500;
+    else if(/repar|diagn[oó]st|revisi[oó]n|visita/.test(text)) unit=500;
+    let labor=unit*qty;
+    if(level==="second_floor" || /segundo piso|2do piso|segundo nivel/.test(text)) labor+=300*qty;
+    if(level==="difficult" || /dif[ií]cil|techo|tuber[ií]as|tuberias|altura|escalera/.test(text)) labor+=500*qty;
+    return Math.max(0,labor);
+  }
   function repairProfitPreview(){
-    const charge=Number($("repair-charge").value||0), materials=Number($("repair-materials").value||0);
+    const materials=Number($("repair-materials").value||0);
+    const labor=estimateRepairLabor();
+    const charge=Number($("repair-charge").value||0);
+    $("repair-labor-preview").textContent=repairMoney(labor);
     $("repair-profit-preview").textContent=repairMoney(charge-materials);
+  }
+  function suggestRepairPrice(){
+    const materials=Number($("repair-materials").value||0);
+    $("repair-charge").value=(estimateRepairLabor()+materials).toFixed(2);
+    repairProfitPreview();
+  }
+  function escapeInvoice(value){return String(value??"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[ch]));}
+  function makeInvoice(r){
+    const total=Number(r.total_charge_dop||0),paid=Number(r.paid_dop||0),materials=Number(r.materials_cost_dop||0);
+    const labor=Number(r.labor_charge_dop ?? (total-materials));
+    const number=r.invoice_number||("ENMX-F-"+String(r.id||"").slice(-8).toUpperCase());
+    const html=`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Factura ${escapeInvoice(number)} · ENMX Security Cam</title><style>body{font:15px/1.5 Arial,sans-serif;color:#171717;margin:0;padding:28px}.invoice{max-width:760px;margin:auto;border:1px solid #d7b568;padding:28px}.brand{font-weight:900;letter-spacing:2px;color:#8a6720;font-size:22px}.muted{color:#666}.line{border-top:1px solid #ddd;margin:18px 0}.row{display:flex;justify-content:space-between;gap:15px;padding:8px 0;border-bottom:1px solid #eee}.total{font-size:21px;font-weight:bold}.gold{color:#8a6720}@media print{body{padding:0}.invoice{border:0}}@media(max-width:520px){body{padding:8px}.invoice{padding:16px}}</style></head><body><main class="invoice"><div class="brand">ENMX SECURITY CAM</div><div class="muted">Factura de servicios técnicos · República Dominicana</div><div class="line"></div><div class="row"><strong>Factura</strong><strong>${escapeInvoice(number)}</strong></div><div class="row"><span>Fecha</span><span>${escapeInvoice(dateText(r.created_at||new Date().toISOString()))}</span></div><div class="row"><span>Cliente</span><strong>${escapeInvoice(r.customer_name)}</strong></div><div class="row"><span>Teléfono</span><span>${escapeInvoice(r.phone||"—")}</span></div><div class="row"><span>Ubicación</span><span>${escapeInvoice(r.location||"—")}</span></div><div class="line"></div><h3>Detalle del trabajo</h3><p>${escapeInvoice(r.work_description)}</p><div class="row"><span>Mano de obra</span><span>${repairMoney(labor)}</span></div><div class="row"><span>Materiales y piezas</span><span>${repairMoney(materials)}</span></div><div class="row total"><span>TOTAL A PAGAR</span><span>${repairMoney(total)}</span></div><div class="row"><span>Abono recibido</span><span>${repairMoney(paid)}</span></div><div class="row total gold"><span>SALDO PENDIENTE</span><span>${repairMoney(Math.max(0,total-paid))}</span></div>${r.notes?`<p class="muted">Notas: ${escapeInvoice(r.notes)}</p>`:""}<div class="line"></div><p class="muted">Gracias por confiar en ENMX Security Cam. Conserve esta factura como comprobante del servicio.</p><button onclick="window.print()">Imprimir / Guardar como PDF</button></main></body></html>`;
+    const win=window.open("","_blank");
+    if(!win){message("repair-message","El navegador bloqueó la factura emergente. Permite ventanas emergentes e inténtalo otra vez.","error");return;}
+    win.document.open();win.document.write(html);win.document.close();
   }
   function renderRepairs(){
     const term=$("repair-search").value.trim().toLowerCase();
@@ -208,14 +246,14 @@
       });
       right.append(status,document.createElement("br"),save);head.append(left,right);card.appendChild(head);
       const details=make("div","details");
-      [["Teléfono",r.phone||"—"],["Ubicación",r.location||"—"],["Materiales/piezas",repairMoney(r.materials_cost_dop)],["Total a cobrar",repairMoney(r.total_charge_dop)],["Ganancia estimada",repairMoney(r.profit_dop)],["Estado",r.status||"Pendiente"]].forEach(([label,value])=>{const d=make("div","");d.appendChild(make("span","",label));d.appendChild(make("strong","",String(value)));details.appendChild(d);});
-      card.appendChild(details);if(r.notes)card.appendChild(make("div","meta","Notas: "+r.notes));list.appendChild(card);
+      [["Teléfono",r.phone||"—"],["Ubicación",r.location||"—"],["Materiales/piezas",repairMoney(r.materials_cost_dop)],["Total a cobrar",repairMoney(r.total_charge_dop)],["Abono recibido",repairMoney(r.paid_dop)],["Saldo pendiente",repairMoney(Math.max(0,Number(r.total_charge_dop||0)-Number(r.paid_dop||0)))],["Ganancia estimada",repairMoney(r.profit_dop)],["Estado",r.status||"Pendiente"]].forEach(([label,value])=>{const d=make("div","");d.appendChild(make("span","",label));d.appendChild(make("strong","",String(value)));details.appendChild(d);});
+      const invoice=make("button","btn","Generar factura PDF");invoice.type="button";invoice.addEventListener("click",()=>makeInvoice(r));card.appendChild(details);card.appendChild(invoice);if(r.notes)card.appendChild(make("div","meta","Notas: "+r.notes));list.appendChild(card);
     });
   }
   async function loadRepairs(){
     message("repair-message","Cargando historial…");
     try{
-      repairRecords=await api("/rest/v1/repair_quotes?select=id,created_at,customer_name,phone,location,work_description,materials_cost_dop,total_charge_dop,profit_dop,status,notes&order=created_at.desc&limit=500");
+      repairRecords=await api("/rest/v1/repair_quotes?select=id,created_at,customer_name,phone,location,work_description,quantity,work_level,labor_charge_dop,materials_cost_dop,total_charge_dop,paid_dop,invoice_number,profit_dop,status,notes&order=created_at.desc&limit=500");
       if(!Array.isArray(repairRecords))repairRecords=[];
       renderRepairs();message("repair-message","Historial cargado: "+repairRecords.length+" trabajo(s).","success");
     }catch(e){message("repair-message",e.message,"error");}
@@ -254,23 +292,32 @@
   $("view-active").addEventListener("click",()=>showAdminView("active"));
   $("view-billing-trash").addEventListener("click",()=>showAdminView("billing-trash"));
   $("view-repairs").addEventListener("click",()=>showAdminView("repairs"));
+  $("repair-description").addEventListener("input",suggestRepairPrice);
+  $("repair-quantity").addEventListener("input",suggestRepairPrice);
+  $("repair-level").addEventListener("change",suggestRepairPrice);
   $("repair-charge").addEventListener("input",repairProfitPreview);
-  $("repair-materials").addEventListener("input",repairProfitPreview);
+  $("repair-materials").addEventListener("input",suggestRepairPrice);
+  $("repair-paid").addEventListener("input",repairProfitPreview);
+  suggestRepairPrice();
   $("repair-search").addEventListener("input",renderRepairs);
   $("repair-form").addEventListener("submit",async e=>{
     e.preventDefault();
-    const charge=Number($("repair-charge").value),materials=Number($("repair-materials").value);
-    if(charge<0||materials<0){message("repair-message","Los montos no pueden ser negativos.","error");return;}
+    const charge=Number($("repair-charge").value),materials=Number($("repair-materials").value),paid=Number($("repair-paid").value||0);
+    if(charge<0||materials<0||paid<0||paid>charge){message("repair-message","Revisa los montos: no pueden ser negativos y el abono no puede superar el total.","error");return;}
+    const labor=Math.max(0,charge-materials);
+    const invoiceNumber="ENMX-F-"+new Date().toISOString().replace(/[-:TZ.]/g,"").slice(0,14)+"-"+Math.random().toString(36).slice(2,6).toUpperCase();
     const payload={
       customer_name:$("repair-name").value.trim(),phone:$("repair-phone").value.trim()||null,
       location:$("repair-location").value.trim()||null,work_description:$("repair-description").value.trim(),
-      materials_cost_dop:materials,total_charge_dop:charge,profit_dop:charge-materials,
+      quantity:Math.max(1,Number($("repair-quantity").value||1)),work_level:$("repair-level").value,
+      labor_charge_dop:labor,materials_cost_dop:materials,total_charge_dop:charge,paid_dop:paid,
+      invoice_number:invoiceNumber,profit_dop:charge-materials,
       status:$("repair-status").value,notes:$("repair-notes").value.trim()||null
     };
     $("repair-save").disabled=true;message("repair-message","Guardando trabajo…");
     try{
       await api("/rest/v1/repair_quotes",{method:"POST",headers:{"Prefer":"return=minimal"},body:JSON.stringify(payload)});
-      $("repair-form").reset();$("repair-materials").value="0";repairProfitPreview();
+      $("repair-form").reset();$("repair-materials").value="0";$("repair-paid").value="0";$("repair-quantity").value="1";repairProfitPreview();
       message("repair-message","Cotización de reparación guardada correctamente.","success");await loadRepairs();
     }catch(err){message("repair-message",err.message,"error");}
     finally{$("repair-save").disabled=false;}

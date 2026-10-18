@@ -28,11 +28,37 @@
 <div class="row" style="justify-content:space-between"><div><h1>Mis cotizaciones</h1><div id="signed-in" class="sub"></div></div><button id="logout" class="btn secondary" type="button">Cerrar sesión</button></div>
 <div class="stats"><div class="stat"><small>Total de solicitudes</small><strong id="stat-total">—</strong></div><div class="stat"><small>Pendientes</small><strong id="stat-pending">—</strong></div><div class="stat"><small>En proceso</small><strong id="stat-progress">—</strong></div><div class="stat"><small>Completadas</small><strong id="stat-done">—</strong></div></div><div class="stat" style="margin-top:10px;border-color:var(--gold);"><small>Ganancias estimadas de trabajos completados (mano de obra)</small><strong id="stat-earnings">—</strong></div>
 <div class="row"><input id="search" class="search" type="search" placeholder="Buscar por código, nombre o teléfono" aria-label="Buscar cotizaciones"><button id="refresh" class="btn secondary" type="button">Actualizar</button></div>
-<div class="tabs" role="group" aria-label="Sección de cotizaciones"><button id="view-active" class="btn active" type="button" aria-pressed="true">Cotizaciones activas</button><button id="view-billing-trash" class="btn" type="button" aria-pressed="false">Papelera de facturación</button></div>
+<div class="tabs" role="group" aria-label="Secciones de administración"><button id="view-active" class="btn active" type="button" aria-pressed="true">Cotizaciones activas</button><button id="view-billing-trash" class="btn" type="button" aria-pressed="false">Papelera de facturación</button><button id="view-repairs" class="btn" type="button" aria-pressed="false">Reparaciones / trabajos aparte</button></div>
 <div class="sub" id="view-description">Aquí aparecen las cotizaciones pendientes y en proceso. Las completadas se archivan en Papelera de facturación.</div>
 <div id="dashboard-message" class="message" role="status" aria-live="polite"></div>
 </div>
 <div id="clients" class="cards"></div>
+<section id="repairs-area" class="panel hidden">
+  <h2>Cotizaciones aparte: reparaciones y cambios de cámaras</h2>
+  <p class="sub">Registra cambios de cámaras, reparaciones, visitas y otros trabajos sin mezclarlos con las cotizaciones de instalaciones nuevas.</p>
+  <div class="stats">
+    <div class="stat"><small>Trabajos registrados</small><strong id="repair-total">0</strong></div>
+    <div class="stat"><small>Pendientes</small><strong id="repair-pending">0</strong></div>
+    <div class="stat"><small>Completados</small><strong id="repair-done">0</strong></div>
+    <div class="stat"><small>Ganancia neta completada</small><strong id="repair-profit">RD$0</strong></div>
+  </div>
+  <form id="repair-form">
+    <div class="field"><label for="repair-name">Nombre del cliente *</label><input id="repair-name" required maxlength="120"></div>
+    <div class="field"><label for="repair-phone">Teléfono</label><input id="repair-phone" type="tel" maxlength="40"></div>
+    <div class="field"><label for="repair-location">Ubicación del trabajo</label><input id="repair-location" maxlength="180"></div>
+    <div class="field"><label for="repair-description">Trabajo realizado o por realizar *</label><input id="repair-description" required maxlength="500" placeholder="Ej.: cambio de cámara, reparación de cable, revisión de DVR"></div>
+    <div class="field"><label for="repair-materials">Costo de piezas/materiales (RD$) *</label><input id="repair-materials" type="number" min="0" step="0.01" value="0" required></div>
+    <div class="field"><label for="repair-charge">Total que cobrarás al cliente (RD$) *</label><input id="repair-charge" type="number" min="0" step="0.01" required></div>
+    <div class="stat"><small>Ganancia estimada (cobro menos materiales)</small><strong id="repair-profit-preview">RD$0</strong></div>
+    <div class="field"><label for="repair-status">Estado</label><select id="repair-status"><option value="Pendiente">Pendiente</option><option value="En proceso">En proceso</option><option value="Completada">Completada</option></select></div>
+    <div class="field"><label for="repair-notes">Notas (opcional)</label><input id="repair-notes" maxlength="1000" placeholder="Marca/modelo, detalle del problema, pago recibido…"></div>
+    <button class="btn" id="repair-save" type="submit">Guardar cotización de reparación</button>
+  </form>
+  <div id="repair-message" class="message" role="status" aria-live="polite"></div>
+  <h2 style="margin-top:24px">Historial de reparaciones</h2>
+  <input id="repair-search" class="search" type="search" placeholder="Buscar por cliente, teléfono o trabajo">
+  <div id="repair-list" class="cards" style="margin-top:14px"></div>
+</section>
 </section>
 </main>
 <footer class="wrap">Mantén tu contraseña privada. El acceso a los registros también está protegido por las políticas de Supabase.</footer>
@@ -147,6 +173,66 @@
       container.appendChild(card);
     });
   }
+
+  let repairRecords = [];
+  const repairMoney = value => money(Number(value||0));
+  function repairProfitPreview(){
+    const charge=Number($("repair-charge").value||0), materials=Number($("repair-materials").value||0);
+    $("repair-profit-preview").textContent=repairMoney(charge-materials);
+  }
+  function renderRepairs(){
+    const term=$("repair-search").value.trim().toLowerCase();
+    $("repair-total").textContent=repairRecords.length;
+    $("repair-pending").textContent=repairRecords.filter(r=>r.status==="Pendiente").length;
+    const done=repairRecords.filter(r=>r.status==="Completada");
+    $("repair-done").textContent=done.length;
+    $("repair-profit").textContent=repairMoney(done.reduce((s,r)=>s+Number(r.profit_dop||0),0));
+    const list=$("repair-list");list.replaceChildren();
+    const rows=repairRecords.filter(r=>[r.customer_name,r.phone,r.work_description,r.location].some(v=>String(v||"").toLowerCase().includes(term)));
+    if(!rows.length){list.appendChild(make("div","empty","Todavía no hay reparaciones guardadas o no hay resultados."));return;}
+    rows.forEach(r=>{
+      const card=make("article","client"),head=make("div","client-head"),left=make("div"),right=make("div");
+      left.appendChild(make("div","code","REPARACIÓN · "+dateText(r.created_at)));
+      left.appendChild(make("h2","",r.customer_name));
+      left.appendChild(make("div","meta",r.work_description));
+      const status=make("select","status-select");
+      [["Pendiente","Pendiente"],["En proceso","En proceso"],["Completada","Completada"]].forEach(([v,t])=>{const o=make("option","",t);o.value=v;status.appendChild(o);});
+      status.value=r.status||"Pendiente";
+      const save=make("button","btn secondary","Actualizar estado");save.type="button";save.style.marginTop="8px";
+      save.addEventListener("click",async()=>{
+        save.disabled=true;
+        try{
+          await api("/rest/v1/repair_quotes?id=eq."+encodeURIComponent(r.id),{method:"PATCH",headers:{"Prefer":"return=minimal"},body:JSON.stringify({status:status.value})});
+          r.status=status.value;renderRepairs();message("repair-message","Estado de reparación actualizado.","success");
+        }catch(e){message("repair-message",e.message,"error");save.disabled=false;}
+      });
+      right.append(status,document.createElement("br"),save);head.append(left,right);card.appendChild(head);
+      const details=make("div","details");
+      [["Teléfono",r.phone||"—"],["Ubicación",r.location||"—"],["Materiales/piezas",repairMoney(r.materials_cost_dop)],["Total a cobrar",repairMoney(r.total_charge_dop)],["Ganancia estimada",repairMoney(r.profit_dop)],["Estado",r.status||"Pendiente"]].forEach(([label,value])=>{const d=make("div","");d.appendChild(make("span","",label));d.appendChild(make("strong","",String(value)));details.appendChild(d);});
+      card.appendChild(details);if(r.notes)card.appendChild(make("div","meta","Notas: "+r.notes));list.appendChild(card);
+    });
+  }
+  async function loadRepairs(){
+    message("repair-message","Cargando historial…");
+    try{
+      repairRecords=await api("/rest/v1/repair_quotes?select=id,created_at,customer_name,phone,location,work_description,materials_cost_dop,total_charge_dop,profit_dop,status,notes&order=created_at.desc&limit=500");
+      if(!Array.isArray(repairRecords))repairRecords=[];
+      renderRepairs();message("repair-message","Historial cargado: "+repairRecords.length+" trabajo(s).","success");
+    }catch(e){message("repair-message",e.message,"error");}
+  }
+  function showAdminView(view){
+    currentView=view;
+    $("repairs-area").classList.toggle("hidden",view!=="repairs");
+    $("clients").classList.toggle("hidden",view==="repairs");
+    $("view-description").classList.toggle("hidden",view==="repairs");
+    $("dashboard-message").classList.toggle("hidden",view==="repairs");
+    ["view-active","view-billing-trash","view-repairs"].forEach(id=>{
+      const active=(id==="view-active"&&view==="active")||(id==="view-billing-trash"&&view==="billing-trash")||(id==="view-repairs"&&view==="repairs");
+      $(id).classList.toggle("active",active);$(id).setAttribute("aria-pressed",String(active));
+    });
+    if(view==="repairs")loadRepairs();else render();
+  }
+
   async function loadRecords(){
     $("refresh").disabled=true;message("dashboard-message","Cargando cotizaciones…");
     try{
@@ -165,8 +251,30 @@
   $("logout").addEventListener("click",clearSession);
   $("refresh").addEventListener("click",loadRecords);
   $("search").addEventListener("input",render);
-  $("view-active").addEventListener("click",()=>{currentView="active";render();});
-  $("view-billing-trash").addEventListener("click",()=>{currentView="billing-trash";render();});
+  $("view-active").addEventListener("click",()=>showAdminView("active"));
+  $("view-billing-trash").addEventListener("click",()=>showAdminView("billing-trash"));
+  $("view-repairs").addEventListener("click",()=>showAdminView("repairs"));
+  $("repair-charge").addEventListener("input",repairProfitPreview);
+  $("repair-materials").addEventListener("input",repairProfitPreview);
+  $("repair-search").addEventListener("input",renderRepairs);
+  $("repair-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const charge=Number($("repair-charge").value),materials=Number($("repair-materials").value);
+    if(charge<0||materials<0){message("repair-message","Los montos no pueden ser negativos.","error");return;}
+    const payload={
+      customer_name:$("repair-name").value.trim(),phone:$("repair-phone").value.trim()||null,
+      location:$("repair-location").value.trim()||null,work_description:$("repair-description").value.trim(),
+      materials_cost_dop:materials,total_charge_dop:charge,profit_dop:charge-materials,
+      status:$("repair-status").value,notes:$("repair-notes").value.trim()||null
+    };
+    $("repair-save").disabled=true;message("repair-message","Guardando trabajo…");
+    try{
+      await api("/rest/v1/repair_quotes",{method:"POST",headers:{"Prefer":"return=minimal"},body:JSON.stringify(payload)});
+      $("repair-form").reset();$("repair-materials").value="0";repairProfitPreview();
+      message("repair-message","Cotización de reparación guardada correctamente.","success");await loadRepairs();
+    }catch(err){message("repair-message",err.message,"error");}
+    finally{$("repair-save").disabled=false;}
+  });
   try{
     const saved=sessionStorage.getItem(SESSION_KEY);
     if(saved){const parsed=JSON.parse(saved);if(parsed.user?.id===ADMIN_UID&&parsed.access_token){session=parsed;setLoggedIn(parsed.user);loadRecords();}else clearSession();}

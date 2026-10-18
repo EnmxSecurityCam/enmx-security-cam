@@ -28,7 +28,7 @@
 <div class="row" style="justify-content:space-between"><div><h1>Mis cotizaciones</h1><div id="signed-in" class="sub"></div></div><button id="logout" class="btn secondary" type="button">Cerrar sesión</button></div>
 <div class="stats"><div class="stat"><small>Total de solicitudes</small><strong id="stat-total">—</strong></div><div class="stat"><small>Pendientes</small><strong id="stat-pending">—</strong></div><div class="stat"><small>En proceso</small><strong id="stat-progress">—</strong></div><div class="stat"><small>Completadas</small><strong id="stat-done">—</strong></div></div><div class="stat" style="margin-top:10px;border-color:var(--gold);"><small>Ganancias estimadas de trabajos completados (mano de obra)</small><strong id="stat-earnings">—</strong></div>
 <div class="row"><input id="search" class="search" type="search" placeholder="Buscar por código, nombre o teléfono" aria-label="Buscar cotizaciones"><button id="refresh" class="btn secondary" type="button">Actualizar</button></div>
-<div class="tabs" role="group" aria-label="Secciones de administración"><button id="view-active" class="btn active" type="button" aria-pressed="true">Cotizaciones activas</button><button id="view-billing-trash" class="btn" type="button" aria-pressed="false">Papelera de facturación</button><button id="view-repairs" class="btn" type="button" aria-pressed="false">Reparaciones / trabajos aparte</button></div>
+<div class="tabs" role="group" aria-label="Secciones de administración"><button id="view-pending" class="btn active" type="button" aria-pressed="true">Pendientes</button><button id="view-active" class="btn" type="button" aria-pressed="false">Activos / en proceso</button><button id="view-completed" class="btn" type="button" aria-pressed="false">Completados</button><button id="view-repairs" class="btn" type="button" aria-pressed="false">Reparaciones / trabajos aparte</button></div>
 <div class="sub" id="view-description">Aquí aparecen las cotizaciones pendientes y en proceso. Las completadas se archivan en Papelera de facturación.</div>
 <div id="dashboard-message" class="message" role="status" aria-live="polite"></div>
 </div>
@@ -75,7 +75,7 @@
   const $ = id => document.getElementById(id);
   let records = [];
   let session = null;
-  let currentView = "active";
+  let currentView = "pending";
   const money = value => value == null ? "—" : new Intl.NumberFormat("es-DO",{style:"currency",currency:"DOP",maximumFractionDigits:0}).format(Number(value));
   const dateText = value => { if(!value) return "—"; const d=new Date(value); return Number.isNaN(d.getTime())?"—":d.toLocaleString("es-DO"); };
   function message(id,text,kind=""){ $(id).textContent=text; $(id).className="message "+kind; }
@@ -112,16 +112,15 @@
   function render(){
     const term=$("search").value.trim().toLowerCase();
     const isCompleted = r => /complete|completad/i.test(String(r.status||""));
-    const viewRecords = records.filter(r => currentView === "billing-trash" ? isCompleted(r) : !isCompleted(r));
+    const isPending = r => !r.status || /pending|pendiente/i.test(String(r.status||""));
+    const isInProgress = r => /progress|proceso|activo/i.test(String(r.status||""));
+    const viewRecords = records.filter(r => currentView === "pending" ? isPending(r) : currentView === "active" ? isInProgress(r) : currentView === "completed" ? isCompleted(r) : !isCompleted(r));
     const filtered=viewRecords.filter(r=>{
       const q=r.quote&&typeof r.quote==="object"?r.quote:{};
       return [q.client_code,r.customer_name,r.phone,q.city,q.location].some(v=>String(v||"").toLowerCase().includes(term));
     });
-    $("view-active").classList.toggle("active",currentView==="active");
-    $("view-active").setAttribute("aria-pressed",String(currentView==="active"));
-    $("view-billing-trash").classList.toggle("active",currentView==="billing-trash");
-    $("view-billing-trash").setAttribute("aria-pressed",String(currentView==="billing-trash"));
-    $("view-description").textContent=currentView==="billing-trash"?"Archivo de facturación: aquí se muestran las cotizaciones marcadas como completadas. No se han eliminado de la base de datos.":"Aquí aparecen las cotizaciones pendientes y en proceso. Las completadas se archivan en Papelera de facturación.";
+    [["view-pending","pending"],["view-active","active"],["view-completed","completed"]].forEach(([id,view])=>{$(id).classList.toggle("active",currentView===view);$(id).setAttribute("aria-pressed",String(currentView===view));});
+    $("view-description").textContent=currentView==="pending"?"Solicitudes nuevas que esperan revisión y precio.":currentView==="active"?"Trabajos aceptados o que ya están en proceso.":currentView==="completed"?"Trabajos finalizados; se conservan aquí como historial.":"Reparaciones y trabajos independientes.";
     $("stat-total").textContent=records.length;
     $("stat-pending").textContent=records.filter(r=>!r.status||/pending|pendiente/i.test(r.status)).length;
     $("stat-progress").textContent=records.filter(r=>/progress|proceso/i.test(r.status||"")).length;
@@ -130,7 +129,7 @@
     const earnings=completed.reduce((sum,r)=>{const q=r.quote&&typeof r.quote==="object"?r.quote:{};const breakdown=q.cost_breakdown_dop&&typeof q.cost_breakdown_dop==="object"?q.cost_breakdown_dop:{};return sum+Number(breakdown.labor||0);},0);
     $("stat-earnings").textContent=money(earnings);
     const container=$("clients");container.replaceChildren();
-    if(!filtered.length){const hasInView=viewRecords.length>0;container.appendChild(make("div","panel empty",hasInView?"No hay resultados para esa búsqueda.":currentView==="billing-trash"?"Todavía no hay cotizaciones completadas.":"No hay cotizaciones activas. Las cotizaciones completadas aparecen en Papelera de facturación."));return;}
+    if(!filtered.length){const hasInView=viewRecords.length>0;container.appendChild(make("div","panel empty",hasInView?"No hay resultados para esa búsqueda.":currentView==="pending"?"No hay solicitudes pendientes.":currentView==="active"?"No hay trabajos activos en proceso.":"Todavía no hay trabajos completados."));return;}
     filtered.forEach(r=>{
       const q=r.quote&&typeof r.quote==="object"?r.quote:{};
       const card=make("article","client");
@@ -142,9 +141,9 @@
       const right=make("div");
       const status=make("select","status-select");
       status.setAttribute("aria-label","Estado de la cotización "+(q.client_code||""));
-      [["pending","Pendiente"],["in_progress","En proceso"],["completed","Completada"]].forEach(([v,label])=>{const o=make("option","",label);o.value=v;status.appendChild(o);});
-      const raw=String(r.status||"pending").toLowerCase();
-      status.value=/complete|completad/.test(raw)?"completed":/progress|proceso/.test(raw)?"in_progress":"pending";
+      [["Pendiente","Pendiente"],["En proceso","En proceso"],["Completada","Completada"]].forEach(([v,label])=>{const o=make("option","",label);o.value=v;status.appendChild(o);});
+      const raw=String(r.status||"Pendiente").toLowerCase();
+      status.value=/complete|completad/.test(raw)?"Completada":/progress|proceso/.test(raw)?"En proceso":"Pendiente";
       const save=make("button","btn secondary","Guardar estado");save.type="button";save.style.marginTop="8px";
       save.addEventListener("click",async()=>{
         save.disabled=true;message("dashboard-message","Guardando estado…");
@@ -161,7 +160,7 @@
       const currentStatus=status.value;
       const guidance=make("div","notice");
       guidance.style.cssText="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:9px;background:#17150f;color:var(--muted);";
-      const guidanceText={pending:"Siguiente paso: contacta al cliente, confirma la dirección, las necesidades y coordina una fecha de visita o instalación.",in_progress:"Trabajo en proceso: coordina la instalación, verifica los equipos y mantén al cliente informado del avance.",completed:"Trabajo completado: confirma que las cámaras funcionen, entrega las instrucciones al cliente y verifica el pago."};
+      const guidanceText={"Pendiente":"Solicitud recibida: revisa los detalles y prepara el precio antes de contactar al cliente.","En proceso":"Trabajo activo: coordina la instalación y actualiza al cliente.","Completada":"Trabajo finalizado: verifica el pago y conserva el registro como historial."};
       guidance.textContent=guidanceText[currentStatus];
       status.addEventListener("change",()=>{guidance.textContent=guidanceText[status.value];});
       const details=make("div","details");
@@ -264,8 +263,8 @@
     $("clients").classList.toggle("hidden",view==="repairs");
     $("view-description").classList.toggle("hidden",view==="repairs");
     $("dashboard-message").classList.toggle("hidden",view==="repairs");
-    ["view-active","view-billing-trash","view-repairs"].forEach(id=>{
-      const active=(id==="view-active"&&view==="active")||(id==="view-billing-trash"&&view==="billing-trash")||(id==="view-repairs"&&view==="repairs");
+    ["view-pending","view-active","view-completed","view-repairs"].forEach(id=>{
+      const active=(id==="view-pending"&&view==="pending")||(id==="view-active"&&view==="active")||(id==="view-completed"&&view==="completed")||(id==="view-repairs"&&view==="repairs");
       $(id).classList.toggle("active",active);$(id).setAttribute("aria-pressed",String(active));
     });
     if(view==="repairs")loadRepairs();else render();
@@ -289,8 +288,9 @@
   $("logout").addEventListener("click",clearSession);
   $("refresh").addEventListener("click",loadRecords);
   $("search").addEventListener("input",render);
+  $("view-pending").addEventListener("click",()=>showAdminView("pending"));
   $("view-active").addEventListener("click",()=>showAdminView("active"));
-  $("view-billing-trash").addEventListener("click",()=>showAdminView("billing-trash"));
+  $("view-completed").addEventListener("click",()=>showAdminView("completed"));
   $("view-repairs").addEventListener("click",()=>showAdminView("repairs"));
   $("repair-description").addEventListener("input",suggestRepairPrice);
   $("repair-quantity").addEventListener("input",suggestRepairPrice);

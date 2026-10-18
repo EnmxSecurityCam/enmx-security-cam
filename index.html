@@ -783,11 +783,13 @@
         "Estado de equipos: " + ({have:"Tiene equipos", some:"Tiene algunos equipos", none:"Necesita comprar todo"}[state.equipmentStatus]),
         "Configuración DVR/NVR: Obligatoria e incluida en el cálculo",
         "Configuración móvil: " + (state.mobile ? "Sí" : "No"),
-        "Mano de obra y extras: " + formatDOP(costs.labor),
-        "Equipos: " + formatDOP(costs.equipment),
-        "Materiales: " + formatDOP(costs.materials),
-        "TOTAL ESTIMADO RD$: " + formatDOP(costs.total),
-        "Total aproximado US$: " + (usdReady ? formatUSD(costs.total / CONFIG.dopPerUsd) : "Tasa no configurada"),
+        ...(state.quoteType === "full" ? [
+          "Solicitud de cotización personalizada: ENMX Security Cam preparará los precios de equipos, materiales e instalación y los enviará por WhatsApp."
+        ] : [
+          "Mano de obra y extras: " + formatDOP(costs.labor),
+          "TOTAL ESTIMADO RD$: " + formatDOP(costs.total),
+          "Total aproximado US$: " + (usdReady ? formatUSD(costs.total / CONFIG.dopPerUsd) : "Tasa no configurada")
+        ]),
         "AVISO: estimado preliminar sujeto a inspección y confirmación."
       ].join("\n");
 
@@ -930,6 +932,7 @@
           reviewFeedback.textContent = "Guardando tu solicitud de forma segura…";
 
           const clientCode = generatedClientCode || (generatedClientCode = generateClientCode());
+          const savedTotal = state.quoteType === "full" ? 0 : costs.total;
           const quoteDetails = {
             client_code: clientCode,
             customer_name: customerName,
@@ -949,8 +952,8 @@
             notes: state.notes || "",
             cost_breakdown_dop: costs,
             exchange_rate_dop_per_usd: usdReady ? CONFIG.dopPerUsd : null,
-            estimated_total_dop: costs.total,
-            estimated_total_usd: usdReady ? Number((costs.total / CONFIG.dopPerUsd).toFixed(2)) : null,
+            estimated_total_dop: savedTotal,
+            estimated_total_usd: state.quoteType === "full" ? null : (usdReady ? Number((costs.total / CONFIG.dopPerUsd).toFixed(2)) : null),
             estimate_notice: "Estimado preliminar sujeto a inspección y confirmación.",
             customer_accepted_estimate: true,
             customer_accepted_at: new Date().toISOString()
@@ -972,8 +975,8 @@
                 customer_name: customerName,
                 phone,
                 quote: quoteDetails,
-                total_dop: costs.total,
-                total_usd: usdReady ? Number((costs.total / CONFIG.dopPerUsd).toFixed(2)) : null,
+                total_dop: savedTotal,
+                total_usd: state.quoteType === "full" ? null : (usdReady ? Number((costs.total / CONFIG.dopPerUsd).toFixed(2)) : null),
                 source: "chatbot"
               })
             });

@@ -765,13 +765,13 @@
         totalLines.push(["Materiales (costo indicado)", formatDOP(costs.materials)]);
       }
 
-      const rows = totalLines.map(([label, value]) =>
+      const rows = state.quoteType === "full" ? "" : totalLines.map(([label, value]) =>
         `<div class="total-line"><span>${label}</span><strong>${value}</strong></div>`
       ).join("");
 
-      const usdLine = usdReady
+      const usdLine = state.quoteType === "full" ? "" : (usdReady
         ? `<div class="total-line"><span>Total aproximado en US$</span><strong>${formatUSD(costs.total / CONFIG.dopPerUsd)}</strong></div>`
-        : `<div class="total-line"><span>Total en US$</span><strong>Configura una tasa válida</strong></div>`;
+        : `<div class="total-line"><span>Total en US$</span><strong>Configura una tasa válida</strong></div>`);
 
       const summaryText = [
         "ENMX SECURITY CAM — SOLICITUD DE COTIZACIÓN",
@@ -802,9 +802,7 @@
           <div class="summary-item"><small>Tipo de servicio</small><strong>${state.quoteType === "labor" ? "Solo mano de obra" : "Equipos, materiales e instalación"}</strong></div>
         </div>
         <div class="totals">
-          ${rows}
-          <div class="total-line final"><span>Total estimado RD$</span><strong>${formatDOP(costs.total)}</strong></div>
-          ${usdLine}
+          ${state.quoteType === "full" ? '<div class="notice">Recibiremos tu solicitud y prepararemos una cotización personalizada con los precios de equipos, materiales e instalación. Te la enviaremos por WhatsApp.</div>' : `${rows}<div class="total-line final"><span>Total estimado RD$</span><strong>${formatDOP(costs.total)}</strong></div>${usdLine}`}
         </div>
         <div class="notice">
           ${fullNeedsCosts ? "Atención: el costo de equipos se dejó en RD$0 porque no se introdujo un precio. El total no incluye equipos cuyo costo esté pendiente. " : ""}
@@ -898,9 +896,7 @@
             <div class="summary-item"><small>Sistema y cantidad</small><strong>${escapeHTML(cameraNames[state.type])} · ${state.quantity} cámara(s)</strong></div>
           </div>
           <div class="totals">
-            ${rows}
-            <div class="total-line final"><span>Total estimado RD$</span><strong>${formatDOP(costs.total)}</strong></div>
-            ${usdLine}
+            ${state.quoteType === "full" ? '<div class="notice">ENMX Security Cam revisará tu solicitud y te enviará por WhatsApp una cotización detallada, sin precios inventados.</div>' : `${rows}<div class="total-line final"><span>Total estimado RD$</span><strong>${formatDOP(costs.total)}</strong></div>${usdLine}`}
           </div>
           <div class="notice">${fullNeedsCosts ? "Atención: el costo de equipos se dejó en RD$0 porque no se introdujo un precio. El total no incluye equipos cuyo costo esté pendiente. " : ""}Este es un estimado preliminar sujeto a inspección y confirmación. Revisa los precios antes de aceptar.</div>
           <label style="display:flex;align-items:flex-start;gap:10px;margin:14px 0;color:#f7f4ed;">
@@ -1013,11 +1009,11 @@
                 <p style="margin:4px 0;"><strong>Teléfono:</strong> ${escapeHTML(phone)}</p>
                 <p style="margin:4px 0;"><strong>Ubicación:</strong> ${escapeHTML(city)}</p>
                 <p style="margin:4px 0;"><strong>Sistema:</strong> ${escapeHTML(cameraNames[state.type])} · ${state.quantity} cámara(s)</p>
-                <div class="totals">${rows}<div class="total-line final"><span>Total estimado RD$</span><strong>${formatDOP(costs.total)}</strong></div>${usdLine}</div>
+                <div class="totals">${state.quoteType === "full" ? '<p>Te enviaremos la cotización detallada por WhatsApp después de revisar los equipos, materiales e instalación.</p>' : `${rows}<div class="total-line final"><span>Total estimado RD$</span><strong>${formatDOP(costs.total)}</strong></div>${usdLine}`}</div>
               </div>
               <p style="margin:0 0 6px;color:#c9c2b0;">TU NÚMERO DE CLIENTE</p>
               <p style="font-size:1.6rem;font-weight:900;letter-spacing:1px;color:#f2d99b;margin:0 0 14px;">${clientCode}</p>
-              <p style="color:#c9c2b0;font-size:.88rem;">Pulsa WhatsApp para enviar el número de cliente junto con el resumen y los precios de tu cotización.</p>
+              <p style="color:#c9c2b0;font-size:.88rem;">${state.quoteType === "full" ? "Pulsa WhatsApp para enviarnos tu solicitud. Prepararemos los precios y te enviaremos la cotización detallada." : "Pulsa WhatsApp para enviar el número de cliente junto con el resumen y los precios de tu cotización."}</p>
               <a class="btn" href="${waUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;margin:4px;">Enviar número y cotización por WhatsApp</a>
               <button type="button" class="btn secondary" id="enmx-new-quote" style="display:inline-block;margin:4px;">Hacer otra cotización</button>
             `;

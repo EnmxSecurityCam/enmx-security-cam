@@ -171,6 +171,34 @@
       ];
       pairs.forEach(([label,value])=>{const item=make("div","");item.appendChild(make("span","",label));item.appendChild(make("strong","",String(value)));details.appendChild(item);});
       card.appendChild(details);
+      if(q.quote_type==="full"){
+        const editor=make("section","panel");editor.style.margin="14px 0 0";editor.style.padding="14px";
+        editor.appendChild(make("h2","","Preparar cotización detallada"));
+        editor.appendChild(make("p","sub","Introduce los precios acordados. Se guardarán en esta cotización y podrás abrir WhatsApp para enviárselos al cliente."));
+        const fields=[["Mano de obra y configuración","labor"],["Equipos","equipment"],["Materiales","materials"],["Otros cargos","extras"]],inputs={};
+        fields.forEach(([label,key])=>{const wrap=make("label","field",label+" (RD$)");const input=make("input");input.type="number";input.min="0";input.step="0.01";input.value=Number((q.admin_quote&&q.admin_quote[key])||0);wrap.appendChild(input);editor.appendChild(wrap);inputs[key]=input;});
+        const totalBox=make("div","stat"),totalLabel=make("small","","Total a cobrar"),totalValue=make("strong","","RD$0");totalBox.append(totalLabel,totalValue);editor.appendChild(totalBox);
+        const calcTotal=()=>{totalValue.textContent=money(fields.reduce((sum,[,key])=>sum+Math.max(0,Number(inputs[key].value||0)),0));};
+        fields.forEach(([,key])=>inputs[key].addEventListener("input",calcTotal));calcTotal();
+        const save=make("button","btn","Guardar precios");save.type="button";
+        const send=make("button","btn secondary","Guardar y enviar por WhatsApp");send.type="button";send.style.marginTop="8px";
+        const feedback=make("div","message");
+        async function saveManualQuote(sendWhatsApp){
+          const values={};for(const [,key] of fields){values[key]=Number(inputs[key].value||0);if(!Number.isFinite(values[key])||values[key]<0)throw new Error("Revisa los precios; no pueden ser negativos.");}
+          const total=Object.values(values).reduce((sum,value)=>sum+value,0),updatedQuote={...q,admin_quote:{...values,total,updated_at:new Date().toISOString()},quote_ready:true};
+          const filter=new URLSearchParams();if(r.id)filter.set("id","eq."+r.id);else filter.set("quote->>client_code","eq."+q.client_code);
+          await api("/rest/v1/cotizaciones?"+filter.toString(),{method:"PATCH",headers:{"Prefer":"return=minimal"},body:JSON.stringify({quote:updatedQuote,total_dop:total,total_usd:null})});
+          r.quote=updatedQuote;r.total_dop=total;feedback.textContent="Precios guardados: "+money(total);feedback.className="message success";
+          if(sendWhatsApp){
+            let phone=String(r.phone||q.phone||"").replace(/\D/g,"");if(phone.length===10)phone="1"+phone;
+            const lines=["ENMX SECURITY CAM — COTIZACIÓN PERSONALIZADA","Cliente: "+(r.customer_name||q.customer_name||""),"Código: "+(q.client_code||""),"Teléfono: "+(r.phone||q.phone||""),"Ubicación: "+(q.city||q.location||""),"","DETALLE","Mano de obra y configuración: "+money(values.labor),"Equipos: "+money(values.equipment),"Materiales: "+money(values.materials),"Otros cargos: "+money(values.extras),"TOTAL A PAGAR: "+money(total),"","Cotización sujeta a confirmación de las condiciones del trabajo."];
+            window.open((phone?"https://wa.me/"+phone+"?text=":"https://wa.me/?text=")+encodeURIComponent(lines.join("\n")),"_blank","noopener");
+          }
+        }
+        save.addEventListener("click",async()=>{save.disabled=true;try{await saveManualQuote(false);}catch(e){feedback.textContent=e.message;feedback.className="message error";}finally{save.disabled=false;}});
+        send.addEventListener("click",async()=>{send.disabled=true;try{await saveManualQuote(true);}catch(e){feedback.textContent=e.message;feedback.className="message error";}finally{send.disabled=false;}});
+        editor.append(save,send,feedback);card.appendChild(editor);
+      }
       card.appendChild(guidance);
       if(q.notes){card.appendChild(make("div","meta","Notas: "+q.notes));}
       container.appendChild(card);
